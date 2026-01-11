@@ -50,6 +50,21 @@ Token Parser::expect(TokenType type) {
     return advance();
 }
 
+/// @brief Skip Whitespace
+void Parser::skip_whitespace() {
+    while (!at_end() && peek().Type == TokenType::WHITESPACE) {
+        advance();
+    }
+}
+
+/// @brief Expect a specific token type after skipping whitespace
+/// @param type: The expected token type
+/// @return The matched token
+Token Parser::expect_ws(TokenType type) {
+    skip_whitespace();
+    return expect(type);
+}
+
 /// @brief Check to see if it's the end of the file
 /// @return bool
 bool Parser::at_end() const {
@@ -66,14 +81,16 @@ bool Parser::at_end() const {
 std::unique_ptr<ASTNode> Parser::parse_expression() {
     auto left = parse_term();
     
-    while (match(TokenType::PLUS) || match(TokenType::MINUS)) {
-        Token op = advance();
+    while (true) {
+        skip_whitespace();
 
-        char operation = op.Value[0];
+        if (!(match(TokenType::PLUS) || match(TokenType::MINUS))) break;
+
+        Token op = advance();
         auto right = parse_term();
 
         left = std::make_unique<BinaryOpNode>(
-            operation,
+            op.Value[0],
             std::move(left),
             std::move(right),
             op.line,
@@ -88,6 +105,8 @@ std::unique_ptr<ASTNode> Parser::parse_expression() {
 /// @return AST node for primary
 /// @note Handles: numbers, variables, symbols, commands, grouping
 std::unique_ptr<ASTNode> Parser::parse_primary() {
+    skip_whitespace();
+
     Token current = peek();
 
     if (match(TokenType::NUMBER)) {
@@ -115,8 +134,11 @@ std::unique_ptr<ASTNode> Parser::parse_primary() {
     if (match(TokenType::BRACE_OPEN)) {
         advance();
 
+        skip_whitespace();
+
         auto expr = parse_expression();
-        expect(TokenType::BRACE_CLOSE);
+
+        expect_ws(TokenType::BRACE_CLOSE);
 
         return expr;
     }
@@ -133,6 +155,8 @@ std::unique_ptr<ASTNode> Parser::parse_primary() {
 /// @note Handles: \sin, \frac, \sqrt, symbols like \pi
 std::unique_ptr<ASTNode> Parser::parse_command() {
     Token cmd = advance();
+
+    skip_whitespace();
 
     if (!cmd.Info) {
         return std::make_unique<SymbolNode>(
@@ -151,9 +175,10 @@ std::unique_ptr<ASTNode> Parser::parse_command() {
             );
         case CommandType::UNARY:
             if (cmd.Value == "\\sqrt") {
-                expect(TokenType::BRACE_OPEN);
+                expect_ws(TokenType::BRACE_OPEN);
+
                 auto operand = parse_expression();
-                expect(TokenType::BRACE_CLOSE);
+                expect_ws(TokenType::BRACE_CLOSE);
 
                 return std::make_unique<SqrtNode>(
                     std::move(operand),
@@ -161,9 +186,10 @@ std::unique_ptr<ASTNode> Parser::parse_command() {
                     cmd.column
                 );
             } else {
-                expect(TokenType::BRACE_OPEN);
+                expect_ws(TokenType::BRACE_OPEN);
+
                 auto arg = parse_expression();
-                expect(TokenType::BRACE_CLOSE);
+                expect_ws(TokenType::BRACE_CLOSE);
 
                 return std::make_unique<FunctionNode>(
                     std::string(cmd.Value),
@@ -174,13 +200,15 @@ std::unique_ptr<ASTNode> Parser::parse_command() {
             }
         case CommandType::BINARY:
             if (cmd.Value == "\\frac") {
-                expect(TokenType::BRACE_OPEN);
-                auto numerator = parse_expression();
-                expect(TokenType::BRACE_CLOSE);
+                expect_ws(TokenType::BRACE_OPEN);
 
-                expect(TokenType::BRACE_OPEN);
+                auto numerator = parse_expression();
+                expect_ws(TokenType::BRACE_CLOSE);
+
+                expect_ws(TokenType::BRACE_OPEN);
+
                 auto denominator = parse_expression();
-                expect(TokenType::BRACE_CLOSE);
+                expect_ws(TokenType::BRACE_CLOSE);
 
                 return std::make_unique<FractionNode>(
                     std::move(numerator),
@@ -206,13 +234,19 @@ std::unique_ptr<ASTNode> Parser::parse_command() {
 std::unique_ptr<ASTNode> Parser::parse_factor() {
     auto left = parse_primary();
 
-    while (!at_end() && 
-           (match(TokenType::NUMBER) || 
-            match(TokenType::IDENTIFIER) || 
-            match(TokenType::COMMAND) ||
-            match(TokenType::BRACE_OPEN))) {
+    while (true) {
+        skip_whitespace();
 
-        if (match(TokenType::BRACE_OPEN) && 
+        if (at_end()) break;
+
+        if (!(match(TokenType::NUMBER) ||
+              match(TokenType::IDENTIFIER) ||
+              match(TokenType::COMMAND) ||
+              match(TokenType::BRACE_OPEN))) {
+            break;
+        }
+
+        if (match(TokenType::BRACE_OPEN) &&
             left->Type == ASTNodeType::FUNCTION) {
             break;
         }
@@ -237,14 +271,16 @@ std::unique_ptr<ASTNode> Parser::parse_factor() {
 std::unique_ptr<ASTNode> Parser::parse_term() {
     auto left = parse_factor();
 
-    while (match(TokenType::STAR) || match(TokenType::SLASH)) {
-        Token op = advance();
+    while (true) {
+        skip_whitespace();
 
-        char operation = op.Value[0];
+        if (!(match(TokenType::STAR) || match(TokenType::SLASH))) break;
+
+        Token op = advance();
         auto right = parse_factor();
 
         left = std::make_unique<BinaryOpNode>(
-            operation,
+            op.Value[0],
             std::move(left),
             std::move(right),
             op.line,

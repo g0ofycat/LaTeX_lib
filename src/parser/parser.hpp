@@ -62,6 +62,14 @@ class Parser {
         /// @return The matched token
         Token expect(TokenType type);
 
+        /// @brief Skip Whitespace
+        void skip_whitespace();
+
+        /// @brief Expect a specific token type after skipping whitespace
+        /// @param type: The expected token type
+        /// @return The matched token
+        Token expect_ws(TokenType type);
+
         /// @brief Check if at end of token stream
         /// @return True if at end
         bool at_end() const;

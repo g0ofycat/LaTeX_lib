@@ -21,7 +21,7 @@ class Lexer {
         size_t position{0};
 
         int line{0};
-        int column{0};
+        int column{1};
 
         // ======================
         // -- DISPATCH DATA
@@ -72,6 +72,18 @@ class Lexer {
         /// @param tokens: The current tokens
         void handle_brace_close(std::vector<Token>& tokens);
 
+        /// @brief DISPATCH: BRACKET (OPEN)
+        /// @param tokens: The current tokens
+        void handle_bracket_open(std::vector<Token>& tokens);
+
+        /// @brief DISPATCH: BRACKET (CLOSED)
+        /// @param tokens: The current tokens
+        void handle_bracket_close(std::vector<Token>& tokens);
+
+        /// @brief DISPATCH: COMMENT
+        /// @param tokens: The current tokens
+        void handle_comment(std::vector<Token>& tokens);
+
         /// @brief DISPATCH: WHITESPACE
         /// @param tokens: The current tokens
         void handle_whitespace(std::vector<Token>& tokens);
@@ -83,6 +95,10 @@ class Lexer {
         /// @brief DISPATCH: IDENTIFIER (variables like x, y, z)
         /// @param tokens: The current tokens
         void handle_identifier(std::vector<Token>& tokens);
+
+        /// @brief DISPATCH: MATH DELIMITERS
+        /// @param tokens: The current tokens
+        void handle_math_op(std::vector<Token>& tokens);
 
     public:
         // ======================
