@@ -10,6 +10,7 @@ add_executable(main
     src/lexer/lexer_registry.cpp 
     src/parser/data/latex_registry.cpp
     src/parser/data/latex_commands_data.cpp
+    src/parser/parser_registry.cpp
 )
 
 target_include_directories(main PRIVATE 

@@ -1,5 +1,5 @@
-#ifndef LATEX_COMMANDS_H
-#define LATEX_COMMANDS_H
+#ifndef LATEX_COMMANDS_HPP
+#define LATEX_COMMANDS_HPP
 
 #include <string_view>
 #include <vector>

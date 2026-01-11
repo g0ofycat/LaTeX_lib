@@ -1,5 +1,5 @@
-#ifndef TOKEN_INFO_H
-#define TOKEN_INFO_H
+#ifndef TOKEN_INFO_HPP
+#define TOKEN_INFO_HPP
 
 #include <string_view>
 

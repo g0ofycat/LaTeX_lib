@@ -1,5 +1,5 @@
-#ifndef LEXER_H
-#define LEXER_H
+#ifndef LEXER_HPP
+#define LEXER_HPP
 
 #include <vector>
 #include <string>
@@ -8,7 +8,7 @@
 #include "./token_info.hpp"
 
 // ======================
-// -- 
+// -- LEXER 
 // ======================
 
 class Lexer {
@@ -18,10 +18,10 @@ class Lexer {
         // ======================
 
         std::string input;
-        size_t position = 0;
-        
-        int line = 0;
-        int column = 0;
+        size_t position{0};
+
+        int line{0};
+        int column{0};
 
         // ======================
         // -- DISPATCH DATA

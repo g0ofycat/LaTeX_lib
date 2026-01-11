@@ -1,5 +1,5 @@
-#ifndef LATEX_INFO_H
-#define LATEX_INFO_H
+#ifndef LATEX_INFO_HPP
+#define LATEX_INFO_HPP
 
 #include <string>
 
