@@ -20,7 +20,7 @@ class Lexer {
         std::string input;
         size_t position{0};
 
-        int line{0};
+        int line{1};
         int column{1};
 
         // ======================
@@ -48,6 +48,11 @@ class Lexer {
         /// @param tokens: The current tokens
         void handle_number(std::vector<Token>& tokens);
 
+        /// @brief Handle a single character
+        /// @param tokens: The current tokens
+        /// @param type: Current token type
+        void handle_single_char(std::vector<Token>& tokens, TokenType type);
+
         /// @brief Read the current input
         /// @param tokens: The current tokens
         void handle_command(std::vector<Token>& tokens);
@@ -63,6 +68,14 @@ class Lexer {
         /// @brief DISPATCH: MINUS
         /// @param tokens: The current tokens
         void handle_minus(std::vector<Token>& tokens);
+
+        /// @brief DISPATCH: STAR
+        /// @param tokens: The current tokens
+        void handle_star(std::vector<Token>& tokens);
+
+        /// @brief DISPATCH: SLASH
+        /// @param tokens: The current tokens
+        void handle_slash(std::vector<Token>& tokens);
 
         /// @brief DISPATCH: BRACE (OPEN)
         /// @param tokens: The current tokens

@@ -39,7 +39,9 @@ const std::array<Lexer::LexerAction, 256> Lexer::DISPATCH_TABLE = [] {
     table[(unsigned char)']']  = &Lexer::handle_bracket_close;
     table[(unsigned char)'+']  = &Lexer::handle_plus;
     table[(unsigned char)'-']  = &Lexer::handle_minus;
-    
+    table[(unsigned char)'*'] = &Lexer::handle_star;
+    table[(unsigned char)'/'] = &Lexer::handle_slash;
+
     table[(unsigned char)'%'] = &Lexer::handle_comment;
 
     table[(unsigned char)'^']  = &Lexer::handle_math_op;
@@ -108,6 +110,25 @@ void Lexer::handle_number(std::vector<Token>& tokens) {
     });
 }
 
+/// @brief Handle a single character
+/// @param tokens: The current tokens
+/// @param type: Current token type
+void Lexer::handle_single_char(std::vector<Token>& tokens, TokenType type) {
+    int start_line = line;
+    int start_column = column;
+    size_t start = position;
+
+    advance();
+
+    tokens.push_back({
+        std::string_view(input.data() + start, 1),
+        nullptr,
+        type,
+        start_line,
+        start_column
+    });
+}
+
 /// @brief Read the current input
 /// @param tokens: The current tokens
 void Lexer::handle_command(std::vector<Token>& tokens) {
@@ -118,14 +139,9 @@ void Lexer::handle_command(std::vector<Token>& tokens) {
     advance();
 
     char c = peek();
-    bool is_control_word = std::isalpha(static_cast<unsigned char>(c));
 
-    if (is_control_word) {
+    if (std::isalpha(static_cast<unsigned char>(c))) {
         while (std::isalpha(static_cast<unsigned char>(peek()))) {
-            advance();
-        }
-
-        while (peek() == ' ' || peek() == '\t' || peek() == '\n') {
             advance();
         }
     } else if (c != '\0') {
@@ -147,109 +163,49 @@ void Lexer::handle_command(std::vector<Token>& tokens) {
 /// @brief DISPATCH: PLUS
 /// @param tokens: The current tokens
 void Lexer::handle_plus(std::vector<Token>& tokens) {
-    int start_line = line;
-    int start_column = column;
-    size_t start = position;
-
-    advance();
-
-    tokens.push_back({
-        std::string_view(input.data() + start, 1),
-        nullptr,
-        TokenType::PLUS,
-        start_line,
-        start_column
-    });
+    handle_single_char(tokens, TokenType::PLUS);
 }
 
 /// @brief DISPATCH: MINUS
 /// @param tokens: The current tokens
 void Lexer::handle_minus(std::vector<Token>& tokens) {
-    int start_line = line;
-    int start_column = column;
-    size_t start = position;
+    handle_single_char(tokens, TokenType::MINUS);
+}
 
-    advance();
+/// @brief DISPATCH: STAR
+/// @param tokens: The current tokens
+void Lexer::handle_star(std::vector<Token>& tokens) {
+    handle_single_char(tokens, TokenType::STAR);
+}
 
-    tokens.push_back({
-        std::string_view(input.data() + start, 1),
-        nullptr,
-        TokenType::MINUS,
-        start_line,
-        start_column
-    });
+/// @brief DISPATCH: SLASH
+/// @param tokens: The current tokens
+void Lexer::handle_slash(std::vector<Token>& tokens) {
+    handle_single_char(tokens, TokenType::SLASH);
 }
 
 /// @brief DISPATCH: BRACE (OPEN)
 /// @param tokens: The current tokens
 void Lexer::handle_brace_open(std::vector<Token>& tokens) {
-    int start_line = line;
-    int start_column = column;
-    size_t start = position;
-
-    advance();
-
-    tokens.push_back({
-        std::string_view(input.data() + start, 1),
-        nullptr,
-        TokenType::BRACE_OPEN,
-        start_line,
-        start_column
-    });
+    handle_single_char(tokens, TokenType::BRACE_OPEN);
 }
 
 /// @brief DISPATCH: BRACE (CLOSED)
 /// @param tokens: The current tokens
 void Lexer::handle_brace_close(std::vector<Token>& tokens) {
-    int start_line = line;
-    int start_column = column;
-    size_t start = position;
-
-    advance();
-
-    tokens.push_back({
-        std::string_view(input.data() + start, 1),
-        nullptr,
-        TokenType::BRACE_CLOSE,
-        start_line,
-        start_column
-    });
+    handle_single_char(tokens, TokenType::BRACE_CLOSE);
 }
 
 /// @brief DISPATCH: BRACKET (OPEN)
 /// @param tokens: The current tokens
 void Lexer::handle_bracket_open(std::vector<Token>& tokens) {
-    int start_line = line;
-    int start_column = column;
-    size_t start = position;
-
-    advance();
-
-    tokens.push_back({
-        std::string_view(input.data() + start, 1),
-        nullptr,
-        TokenType::BRACKET_OPEN,
-        start_line,
-        start_column
-    });
+    handle_single_char(tokens, TokenType::BRACKET_OPEN);
 }
 
 /// @brief DISPATCH: BRACKET (CLOSED)
 /// @param tokens: The current tokens
 void Lexer::handle_bracket_close(std::vector<Token>& tokens) {
-    int start_line = line;
-    int start_column = column;
-    size_t start = position;
-
-    advance();
-
-    tokens.push_back({
-        std::string_view(input.data() + start, 1),
-        nullptr,
-        TokenType::BRACKET_CLOSE,
-        start_line,
-        start_column
-    });
+    handle_single_char(tokens, TokenType::BRACKET_CLOSE);
 }
 
 /// @brief DISPATCH: COMMENT
@@ -267,9 +223,21 @@ void Lexer::handle_comment(std::vector<Token>& tokens) {
 /// @brief DISPATCH: WHITESPACE
 /// @param tokens: The current tokens
 void Lexer::handle_whitespace(std::vector<Token>& tokens) {
+    int start_line = line;
+    int start_column = column;
+    size_t start = position;
+
     while (peek() == ' ' || peek() == '\t' || peek() == '\n') {
         advance();
     }
+
+    tokens.push_back({
+        std::string_view(input.data() + start, position - start),
+        nullptr,
+        TokenType::WHITESPACE,
+        start_line,
+        start_column
+    });
 }
 
 /// @brief DISPATCH: INVALID
@@ -315,12 +283,10 @@ void Lexer::handle_identifier(std::vector<Token>& tokens) {
 /// @brief DISPATCH: MATH DELIMITERS
 /// @param tokens: The current tokens
 void Lexer::handle_math_op(std::vector<Token>& tokens) {
-    int start_line = line;
-    int start_column = column;
-    size_t start = position;
-    char c = advance();
+    char c = peek();
 
     TokenType type;
+
     switch (c) {
         case '^': type = TokenType::SUPERSCRIPT; break;
         case '_': type = TokenType::SUBSCRIPT; break;
@@ -329,20 +295,14 @@ void Lexer::handle_math_op(std::vector<Token>& tokens) {
         default:  type = TokenType::INVALID; break;
     }
 
-    tokens.push_back({
-        std::string_view(input.data() + start, 1),
-        nullptr,
-        type,
-        start_line,
-        start_column
-    });
+    handle_single_char(tokens, type);
 }
 
 /// @brief Tokenize the current input
 /// @return std::vector<Token>
 std::vector<Token> Lexer::tokenize() {
     std::vector<Token> tokens;
-    tokens.reserve(input.size() / 2);
+    tokens.reserve(input.size() / 4);
 
     while (position < input.size()) {
         unsigned char current = static_cast<unsigned char>(peek());

@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <vector>
-#include <string>
+#include <string_view>
 
 #include "./ast_info.hpp"
 
@@ -52,19 +52,19 @@ class NumberNode : public ASTNode {
 /// @brief Variable identifier node
 class VariableNode : public ASTNode {
     public:
-        std::string name;
+        std::string_view name;
 
-        VariableNode(std::string n, int line, int col)
-            : ASTNode(ASTNodeType::VARIABLE, line, col), name(std::move(n)) {}
+        VariableNode(std::string_view n, int line, int col)
+            : ASTNode(ASTNodeType::VARIABLE, line, col), name(n) {}
 };
 
 /// @brief Symbol node (e.g. \pi)
 class SymbolNode : public ASTNode {
     public:
-        std::string symbol;
+        std::string_view symbol;
 
-        SymbolNode(std::string sym, int line, int col)
-            : ASTNode(ASTNodeType::SYMBOL, line, col), symbol(std::move(sym)) {}
+        SymbolNode(std::string_view sym, int line, int col)
+            : ASTNode(ASTNodeType::SYMBOL, line, col), symbol(sym) {}
 };
 
 // ======================
@@ -101,12 +101,12 @@ class UnaryOpNode : public ASTNode {
 /// @brief Function call node (e.g. sin(x))
 class FunctionNode : public ASTNode {
     public:
-        std::string name;
+        std::string_view name;
         std::unique_ptr<ASTNode> argument;
 
-        FunctionNode(std::string n, std::unique_ptr<ASTNode> arg, int line, int col)
+        FunctionNode(std::string_view n, std::unique_ptr<ASTNode> arg, int line, int col)
             : ASTNode(ASTNodeType::FUNCTION, line, col), 
-            name(std::move(n)), argument(std::move(arg)) {}
+            name(n), argument(std::move(arg)) {}
 };
 
 /// @brief Fraction node (\frac{a}{b})

@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "./latex_commands.hpp"
 
 // ======================
