@@ -10,13 +10,14 @@
 // -- NAMESPACES
 // ======================
 
-namespace LatexParser {
+namespace LatexParser
+{
     extern const std::vector<CommandInfo> LATEX_COMMANDS;
 
     /// @brief Find the CommandType for a specific CommandType
     /// @param name: The name of the command
     /// @return const CommandInfo*
-    const CommandInfo* find_command(const std::string_view name);
+    const CommandInfo *find_command(const std::string_view name);
 }
 
 #endif

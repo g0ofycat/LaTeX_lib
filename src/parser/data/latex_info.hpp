@@ -7,13 +7,19 @@
 // -- ENUMS / STRUCTS
 // ======================
 
-enum class CommandType { SYMBOL, UNARY, BINARY };
+enum class CommandType
+{
+    SYMBOL,
+    UNARY,
+    BINARY
+};
 
-struct CommandInfo {
+struct CommandInfo
+{
     std::string LaTeX; // std::string: String Command
-    CommandType Type; // CommandType: Type of command
-    int Precedence; // int: Order of Operations
-    int Args; // int: Number of expected arguments
+    CommandType Type;  // CommandType: Type of command
+    int Precedence;    // int: Order of Operations
+    int Args;          // int: Number of expected arguments
 };
 
 #endif

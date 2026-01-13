@@ -3,6 +3,7 @@
 
 #include "../src/lexer/lexer.hpp"
 #include "../src/parser/parser.hpp"
+#include "../src/sem_analyzer/semantic_analyzer.hpp"
 
 static void BM_LexerTokenization(benchmark::State& state) {
     std::string input = R"(\int_{\alpha}^{\beta} f'(x) \, dx = f(\beta) - f(\alpha))";
@@ -25,6 +26,21 @@ static void BM_LexerTokenization(benchmark::State& state) {
                   <<  static_cast<int>(tok.Type)
                   << "  \"" << tok.Value << "\""
                   << "  @" << tok.line << ":" << tok.column
+                  << "\n";
+    }
+
+    Parser parser(tokens);
+    auto ast = parser.parse();
+
+    SemanticAnalyzer analyzer;
+    analyzer.analyze(ast);
+
+    std::cout << "Errors (" << analyzer.get_errors().size() << "):";
+
+    for (const auto& error : analyzer.get_errors()) {
+        std::cout << "  "
+                  <<  error.message
+                  << "  @" << error.line << ":" << error.column
                   << "\n";
     }
 }

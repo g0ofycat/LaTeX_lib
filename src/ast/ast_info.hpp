@@ -7,19 +7,20 @@
 // -- ENUMS / STRUCTS
 // ======================
 
-enum class ASTNodeType {
+enum class ASTNodeType
+{
     NUMBER,
     VARIABLE,
     GROUP,
     BINARY_OP,
     UNARY_OP,
     FUNCTION,
-    FRACTION,
-    SQRT,
+    COMMAND,
     SYMBOL
 };
 
-struct SemanticInfo {
+struct SemanticInfo
+{
     std::string InferredType;
     bool IsConstant = false;
 };
