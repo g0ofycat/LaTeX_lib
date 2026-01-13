@@ -50,12 +50,12 @@ namespace LatexParser {
         { "\\Omega", CommandType::SYMBOL, 0, 0 },
         
         
-        // ======== BINARY OPERATORS  ========
+        // ======== BINARY OPERATORS ========
 
         { "\\frac", CommandType::BINARY, 1, 2 },
         { "\\binom", CommandType::BINARY, 1, 2 },        
 
-        // ========  ROOTS ========
+        // ======== ROOTS ========
 
         { "\\sqrt", CommandType::UNARY, 3, 1 },
         
@@ -74,7 +74,7 @@ namespace LatexParser {
         { "\\arccos", CommandType::UNARY, 4, 1 },
         { "\\arctan", CommandType::UNARY, 4, 1 },
 
-        // ========  HYPERBOLIC FUNCTIONS ========
+        // ======== HYPERBOLIC FUNCTIONS ========
 
         { "\\sinh", CommandType::UNARY, 4, 1 },
         { "\\cosh", CommandType::UNARY, 4, 1 },
@@ -102,7 +102,7 @@ namespace LatexParser {
         { "\\leftrightarrow", CommandType::SYMBOL, 0, 0 },
         { "\\Leftrightarrow", CommandType::SYMBOL, 0, 0 },
 
-        // ========  RELATIONS ========
+        // ======== RELATIONS ========
 
         { "\\leq", CommandType::SYMBOL, 0, 0 },
         { "\\geq", CommandType::SYMBOL, 0, 0 },

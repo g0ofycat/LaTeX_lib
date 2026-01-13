@@ -93,6 +93,10 @@ class Lexer {
         /// @param tokens: The current tokens
         void handle_bracket_close(std::vector<Token>& tokens);
 
+        /// @brief DISPATCH: PUNCTUATION
+        /// @param tokens: The current tokens
+        void handle_punctuation(std::vector<Token>& tokens);
+
         /// @brief DISPATCH: COMMENT
         /// @param tokens: The current tokens
         void handle_comment(std::vector<Token>& tokens);

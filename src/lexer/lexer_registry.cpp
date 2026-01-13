@@ -49,6 +49,17 @@ const std::array<Lexer::LexerAction, 256> Lexer::DISPATCH_TABLE = [] {
     table[(unsigned char)'$']  = &Lexer::handle_math_op;
     table[(unsigned char)'&']  = &Lexer::handle_math_op;
 
+    table[(unsigned char)'(']  = &Lexer::handle_punctuation;
+    table[(unsigned char)')']  = &Lexer::handle_punctuation;
+    table[(unsigned char)'\''] = &Lexer::handle_punctuation;
+    table[(unsigned char)'=']  = &Lexer::handle_punctuation;
+    table[(unsigned char)',']  = &Lexer::handle_punctuation;
+    table[(unsigned char)'.']  = &Lexer::handle_punctuation;
+    table[(unsigned char)':']  = &Lexer::handle_punctuation;
+    table[(unsigned char)';']  = &Lexer::handle_punctuation;
+    table[(unsigned char)'!']  = &Lexer::handle_punctuation;
+    table[(unsigned char)'?']  = &Lexer::handle_punctuation;
+
     return table;
 }();
 
@@ -208,6 +219,12 @@ void Lexer::handle_bracket_close(std::vector<Token>& tokens) {
     handle_single_char(tokens, TokenType::BRACKET_CLOSE);
 }
 
+/// @brief DISPATCH: PUNCTUATION
+/// @param tokens: The current tokens
+void Lexer::handle_punctuation(std::vector<Token>& tokens) {
+    handle_single_char(tokens, TokenType::PUNCTUATION);
+}
+
 /// @brief DISPATCH: COMMENT
 /// @param tokens: The current tokens
 void Lexer::handle_comment(std::vector<Token>& tokens) {
@@ -223,21 +240,9 @@ void Lexer::handle_comment(std::vector<Token>& tokens) {
 /// @brief DISPATCH: WHITESPACE
 /// @param tokens: The current tokens
 void Lexer::handle_whitespace(std::vector<Token>& tokens) {
-    int start_line = line;
-    int start_column = column;
-    size_t start = position;
-
     while (peek() == ' ' || peek() == '\t' || peek() == '\n') {
         advance();
     }
-
-    tokens.push_back({
-        std::string_view(input.data() + start, position - start),
-        nullptr,
-        TokenType::WHITESPACE,
-        start_line,
-        start_column
-    });
 }
 
 /// @brief DISPATCH: INVALID
