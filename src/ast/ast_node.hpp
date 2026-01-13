@@ -8,6 +8,12 @@
 #include "./ast_info.hpp"
 
 // ======================
+// -- ASTVisitor
+// ======================
+
+class ASTVisitor;
+
+// ======================
 // -- ASTNode
 // ======================
 
@@ -18,6 +24,7 @@ class ASTNode {
         // ======================
 
         ASTNodeType Type;
+        SemanticInfo Info;
         int line;
         int column;
 
@@ -26,6 +33,8 @@ class ASTNode {
         // ======================
 
         virtual ~ASTNode() = default;
+
+        virtual void accept(ASTVisitor& visitor) = 0;
 
     protected:
         /// @brief Construct an AST node
@@ -47,6 +56,8 @@ class NumberNode : public ASTNode {
 
         NumberNode(double val, int line, int col)
             : ASTNode(ASTNodeType::NUMBER, line, col), value(val) {}
+
+        void accept(ASTVisitor& v) override;
 };
 
 /// @brief Variable identifier node
@@ -56,6 +67,8 @@ class VariableNode : public ASTNode {
 
         VariableNode(std::string_view n, int line, int col)
             : ASTNode(ASTNodeType::VARIABLE, line, col), name(n) {}
+
+        void accept(ASTVisitor& v) override;
 };
 
 /// @brief Symbol node (e.g. \pi)
@@ -65,11 +78,23 @@ class SymbolNode : public ASTNode {
 
         SymbolNode(std::string_view sym, int line, int col)
             : ASTNode(ASTNodeType::SYMBOL, line, col), symbol(sym) {}
+
+        void accept(ASTVisitor& v) override;
 };
 
 // ======================
 // -- OPERATOR CLASSES
 // ======================
+
+class GroupNode : public ASTNode {
+    public:
+        std::vector<std::unique_ptr<ASTNode>> elements;
+
+        GroupNode(std::vector<std::unique_ptr<ASTNode>> elms, int l, int c)
+            : ASTNode(ASTNodeType::GROUP, l, c), elements(std::move(elms)) {}
+
+        void accept(ASTVisitor& v) override;
+};
 
 /// @brief Binary operation node
 class BinaryOpNode : public ASTNode {
@@ -79,8 +104,10 @@ class BinaryOpNode : public ASTNode {
         std::unique_ptr<ASTNode> right;
 
         BinaryOpNode(char operation, std::unique_ptr<ASTNode> l, std::unique_ptr<ASTNode> r, int line, int col)
-            : ASTNode(ASTNodeType::BINARY_OP, line, col), 
+            : ASTNode(ASTNodeType::BINARY_OP, line, col),
             op(operation), left(std::move(l)), right(std::move(r)) {}
+
+        void accept(ASTVisitor& v) override;
 };
 
 /// @brief Unary operation node
@@ -90,8 +117,10 @@ class UnaryOpNode : public ASTNode {
         std::unique_ptr<ASTNode> operand;
 
         UnaryOpNode(char operation, std::unique_ptr<ASTNode> operand, int line, int col)
-            : ASTNode(ASTNodeType::UNARY_OP, line, col), 
+            : ASTNode(ASTNodeType::UNARY_OP, line, col),
             op(operation), operand(std::move(operand)) {}
+
+        void accept(ASTVisitor& v) override;
 };
 
 // ======================
@@ -102,11 +131,13 @@ class UnaryOpNode : public ASTNode {
 class FunctionNode : public ASTNode {
     public:
         std::string_view name;
-        std::unique_ptr<ASTNode> argument;
+        std::vector<std::unique_ptr<ASTNode>> arguments;
 
-        FunctionNode(std::string_view n, std::unique_ptr<ASTNode> arg, int line, int col)
-            : ASTNode(ASTNodeType::FUNCTION, line, col), 
-            name(n), argument(std::move(arg)) {}
+        FunctionNode(std::string_view n, std::vector<std::unique_ptr<ASTNode>> args, int line, int col)
+            : ASTNode(ASTNodeType::FUNCTION, line, col),
+            name(n), arguments(std::move(args)) {}
+
+        void accept(ASTVisitor& v) override;
 };
 
 /// @brief Fraction node (\frac{a}{b})
@@ -116,8 +147,10 @@ class FractionNode : public ASTNode {
         std::unique_ptr<ASTNode> denominator;
 
         FractionNode(std::unique_ptr<ASTNode> num, std::unique_ptr<ASTNode> denom, int line, int col)
-            : ASTNode(ASTNodeType::FRACTION, line, col), 
+            : ASTNode(ASTNodeType::FRACTION, line, col),
             numerator(std::move(num)), denominator(std::move(denom)) {}
+
+        void accept(ASTVisitor& v) override;
 };
 
 /// @brief Square root node (\sqrt{x})
@@ -127,6 +160,8 @@ class SqrtNode : public ASTNode {
 
         SqrtNode(std::unique_ptr<ASTNode> op, int line, int col)
             : ASTNode(ASTNodeType::SQRT, line, col), operand(std::move(op)) {}
+
+        void accept(ASTVisitor& v) override;
 };
 
 #endif

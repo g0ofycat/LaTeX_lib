@@ -181,9 +181,13 @@ std::unique_ptr<ASTNode> Parser::parse_command() {
 
                 expect(TokenType::BRACE_CLOSE);
 
+                std::vector<std::unique_ptr<ASTNode>> args;
+
+                args.push_back(std::move(arg));
+
                 return std::make_unique<FunctionNode>(
                     cmd.Value,
-                    std::move(arg),
+                    std::move(args),
                     cmd.line,
                     cmd.column
                 );
