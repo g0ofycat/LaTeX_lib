@@ -6,7 +6,7 @@
 #include "../src/sem_analyzer/semantic_analyzer.hpp"
 
 static void BM_LexerTokenization(benchmark::State& state) {
-    std::string input = R"(\int_{\alpha}^{\beta} f'(x) \, dx = f(\beta) - f(\alpha))";
+    std::string input = R"(\sqrt{-1})";
 
     for (auto _ : state) {
         Lexer benchmark_lexer(input);

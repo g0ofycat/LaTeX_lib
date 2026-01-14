@@ -113,45 +113,61 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
 {
     Token current = peek();
 
-    if (match(TokenType::NUMBER))
+    switch (current.Type)
+    {
+    case TokenType::MINUS:
+    case TokenType::PLUS:
+    {
+        Token op = advance();
+        auto operand = parse_primary();
+        return std::make_unique<UnaryOpNode>(op.Value[0], std::move(operand), op.line, op.column);
+    }
+
+    case TokenType::NUMBER:
     {
         Token num = advance();
-
         double value = std::stod(std::string(num.Value));
-
         return std::make_unique<NumberNode>(value, num.line, num.column);
     }
 
-    if (match(TokenType::IDENTIFIER))
+    case TokenType::IDENTIFIER:
     {
         Token var = advance();
-
-        return std::make_unique<VariableNode>(
-            var.Value,
-            var.line,
-            var.column);
+        return std::make_unique<VariableNode>(var.Value, var.line, var.column);
     }
 
-    if (match(TokenType::COMMAND))
-    {
+    case TokenType::COMMAND:
         return parse_command();
-    }
 
-    if (match(TokenType::BRACE_OPEN))
+    case TokenType::BRACE_OPEN:
     {
         advance();
-
         auto expr = parse_expression();
-
         expect(TokenType::BRACE_CLOSE);
-
         return expr;
     }
 
-    throw ParseError(
-        "Unexpected token in primary expression",
-        current.line,
-        current.column);
+    case TokenType::PUNCTUATION:
+        if (current.Value == "(")
+        {
+            advance();
+            auto expr = parse_expression();
+
+            current = peek();
+            if (current.Type != TokenType::PUNCTUATION || current.Value != ")")
+            {
+                throw ParseError("Expected closing parenthesis", current.line, current.column);
+            }
+            advance();
+            return expr;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    throw ParseError("Unexpected token in primary expression", current.line, current.column);
 }
 
 /// @brief Parse a LaTeX command
@@ -171,6 +187,7 @@ std::unique_ptr<ASTNode> Parser::parse_command()
     {
         if (match(TokenType::BRACE_OPEN))
         {
+            expect(TokenType::BRACE_OPEN);
             collected_args.push_back(parse_expression());
             expect(TokenType::BRACE_CLOSE);
         }
