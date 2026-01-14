@@ -12,16 +12,11 @@ enum class ASTNodeType
     NUMBER,
     VARIABLE,
     SYMBOL,
+    ASSIGN,
     GROUP,
     BINARY_OP,
     UNARY_OP,
     COMMAND
-};
-
-struct SemanticInfo
-{
-    std::string InferredType;
-    bool IsConstant = false;
 };
 
 #endif

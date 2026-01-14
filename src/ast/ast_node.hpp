@@ -26,7 +26,6 @@ public:
     // ======================
 
     ASTNodeType Type;
-    SemanticInfo Info;
     int line;
     int column;
 
@@ -87,10 +86,25 @@ public:
     void accept(ASTVisitor &v) override;
 };
 
+/// @brief Assignment node (e.g. x = 5)
+struct AssignNode : ASTNode
+{
+    std::string name;
+    std::unique_ptr<ASTNode> value;
+
+    AssignNode(std::string n, std::unique_ptr<ASTNode> v, int l, int c)
+        : ASTNode(ASTNodeType::ASSIGN, l, c),
+          name(std::move(n)),
+          value(std::move(v)) {}
+
+    void accept(ASTVisitor &v) override;
+};
+
 // ======================
 // -- OPERATOR CLASSES
 // ======================
 
+/// @brief Grouping node
 class GroupNode : public ASTNode
 {
 public:

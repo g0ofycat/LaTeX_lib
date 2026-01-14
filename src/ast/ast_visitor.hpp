@@ -10,6 +10,7 @@
 class NumberNode;
 class VariableNode;
 class SymbolNode;
+class AssignNode;
 class GroupNode;
 class BinaryOpNode;
 class UnaryOpNode;
@@ -43,6 +44,10 @@ public:
     /// @brief Visit a symbol node
     /// @param node: The current node
     virtual void visit(SymbolNode &node) = 0;
+
+    /// @brief Visit a assignment node
+    /// @param node: The current node
+    virtual void visit(AssignNode &node) = 0;
 
     /// @brief Visit a group node
     /// @param node: The current node

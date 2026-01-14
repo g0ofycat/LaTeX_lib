@@ -17,6 +17,10 @@ void VariableNode::accept(ASTVisitor &v) { v.visit(*this); }
 /// @param node: The current node
 void SymbolNode::accept(ASTVisitor &v) { v.visit(*this); }
 
+/// @brief Visit a assignment node
+/// @param node: The current node
+void AssignNode::accept(ASTVisitor &v) { v.visit(*this); }
+
 /// @brief Visit a group node
 /// @param node: The current node
 void GroupNode::accept(ASTVisitor &v) { v.visit(*this); }

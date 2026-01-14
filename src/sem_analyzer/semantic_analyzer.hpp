@@ -51,7 +51,7 @@ private:
     // -- DISPATCH DATA
     // ======================
 
-    using ValidatorFunc = std::function<void(SemanticAnalyzer*, CommandNode&)>;
+    using ValidatorFunc = std::function<void(SemanticAnalyzer *, CommandNode &)>;
     static const std::unordered_map<std::string_view, ValidatorFunc> VALIDATOR_DISPATCH_TABLE;
 
     // ======================
@@ -69,6 +69,10 @@ private:
     /// @brief Visit a symbol node
     /// @param node: The current node
     void visit(SymbolNode &node) override;
+
+    /// @brief Visit a assignment node
+    /// @param node: The current node
+    void visit(AssignNode &node) override;
 
     /// @brief Visit a group node
     /// @param node: The current node

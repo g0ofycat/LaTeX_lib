@@ -307,6 +307,33 @@ std::unique_ptr<ASTNode> Parser::parse_term()
     return left;
 }
 
+/// @brief Parse an assignment statement
+/// @return AST node for assignment
+std::unique_ptr<ASTNode> Parser::parse_assignment()
+{
+    if (match(TokenType::IDENTIFIER))
+    {
+        Token ident = peek();
+
+        if (position + 1 < tokens.size() &&
+            tokens[position + 1].Type == TokenType::EQUAL)
+        {
+            advance();
+            advance();
+
+            auto value = parse_assignment();
+
+            return std::make_unique<AssignNode>(
+                std::string(ident.Value),
+                std::move(value),
+                ident.line,
+                ident.column);
+        }
+    }
+
+    return parse_expression();
+}
+
 /// @brief Parse tokens into an AST
 /// @return Root node of the AST
 /// @throws ParseError if parsing fails
@@ -317,7 +344,7 @@ std::unique_ptr<ASTNode> Parser::parse()
         throw ParseError("Empty input", 0, 0);
     }
 
-    auto ast = parse_expression();
+    auto ast = parse_assignment();
 
     if (!at_end() && peek().Type != TokenType::END_OF_FILE)
     {

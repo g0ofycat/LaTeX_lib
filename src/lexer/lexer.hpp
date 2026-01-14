@@ -97,6 +97,10 @@ private:
     /// @param tokens: The current tokens
     void handle_punctuation(std::vector<Token> &tokens);
 
+    /// @brief DISPATCH: EQUAL
+    /// @param tokens: The current tokens
+    void handle_equal(std::vector<Token> &tokens);
+
     /// @brief DISPATCH: COMMENT
     /// @param tokens: The current tokens
     void handle_comment(std::vector<Token> &tokens);

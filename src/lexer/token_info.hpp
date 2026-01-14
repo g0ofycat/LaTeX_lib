@@ -27,6 +27,7 @@ enum class TokenType
     DOLLAR,
     ALIGNMENT,
     PUNCTUATION,
+    EQUAL,
     WHITESPACE,
     END_OF_FILE,
     INVALID,

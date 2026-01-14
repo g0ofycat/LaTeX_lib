@@ -20,11 +20,11 @@ const std::unordered_map<std::string_view, SemanticAnalyzer::ValidatorFunc> Sema
          if (!n.arguments.empty())
              s->validate_log(n.arguments[0].get(), n.line, n.column);
      }},
-    {"\\ln", [](SemanticAnalyzer* s, CommandNode& n) {
-        if (!n.arguments.empty())
-            s->validate_log(n.arguments[0].get(), n.line, n.column);
-    }}
-};
+    {"\\ln", [](SemanticAnalyzer *s, CommandNode &n)
+     {
+         if (!n.arguments.empty())
+             s->validate_log(n.arguments[0].get(), n.line, n.column);
+     }}};
 
 // ======================
 // -- FUNCTION IMPL.

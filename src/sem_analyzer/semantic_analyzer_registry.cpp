@@ -49,6 +49,16 @@ void SemanticAnalyzer::visit(SymbolNode &node)
     // no impl, symbol always valid
 }
 
+/// @brief Visit a assignment node
+/// @param node: The current node
+void SemanticAnalyzer::visit(AssignNode &node)
+{
+    defined_variables.insert(node.name);
+
+    if (node.value)
+        node.value->accept(*this);
+}
+
 /// @brief Visit a group node
 /// @param node: The current node
 void SemanticAnalyzer::visit(GroupNode &node)
@@ -101,7 +111,7 @@ void SemanticAnalyzer::visit(CommandNode &node)
 
     if (it != VALIDATOR_DISPATCH_TABLE.end())
     {
-        it->second(this, node); 
+        it->second(this, node);
     }
 }
 

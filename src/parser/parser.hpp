@@ -100,6 +100,10 @@ private:
     /// @note Handles: multiplication, division
     std::unique_ptr<ASTNode> parse_term();
 
+    /// @brief Parse a assignment statement
+    /// @return AST node for assignment
+    std::unique_ptr<ASTNode> parse_assignment();
+
 public:
     // ======================
     // -- CONSTRUCTOR

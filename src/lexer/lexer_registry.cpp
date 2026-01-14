@@ -57,13 +57,14 @@ const std::array<Lexer::LexerAction, 256> Lexer::LEXER_DISPATCH_TABLE = []
     table[(unsigned char)'('] = &Lexer::handle_punctuation;
     table[(unsigned char)')'] = &Lexer::handle_punctuation;
     table[(unsigned char)'\''] = &Lexer::handle_punctuation;
-    table[(unsigned char)'='] = &Lexer::handle_punctuation;
     table[(unsigned char)','] = &Lexer::handle_punctuation;
     table[(unsigned char)'.'] = &Lexer::handle_punctuation;
     table[(unsigned char)':'] = &Lexer::handle_punctuation;
     table[(unsigned char)';'] = &Lexer::handle_punctuation;
     table[(unsigned char)'!'] = &Lexer::handle_punctuation;
     table[(unsigned char)'?'] = &Lexer::handle_punctuation;
+
+    table[(unsigned char)'='] = &Lexer::handle_equal;
 
     return table;
 }();
@@ -248,6 +249,13 @@ void Lexer::handle_bracket_close(std::vector<Token> &tokens)
 void Lexer::handle_punctuation(std::vector<Token> &tokens)
 {
     handle_single_char(tokens, TokenType::PUNCTUATION);
+}
+
+/// @brief DISPATCH: EQUAL
+/// @param tokens: The current tokens
+void Lexer::handle_equal(std::vector<Token> &tokens)
+{
+    handle_single_char(tokens, TokenType::EQUAL);
 }
 
 /// @brief DISPATCH: COMMENT
