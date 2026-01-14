@@ -1,6 +1,8 @@
 #ifndef AST_VISITOR_HPP
 #define AST_VISITOR_HPP
 
+#include "./ast_node.hpp"
+
 // ======================
 // -- FORWARD DECLR.
 // ======================

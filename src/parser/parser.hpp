@@ -91,6 +91,10 @@ private:
     /// @note Handles: implicit multiplication (2x, xy)
     std::unique_ptr<ASTNode> parse_factor();
 
+    /// @brief Parse an exponent
+    /// @return AST node for exponent
+    std::unique_ptr<ASTNode> parse_exponent();
+
     /// @brief Parse a term (medium precedence)
     /// @return AST node for term
     /// @note Handles: multiplication, division

@@ -16,6 +16,7 @@ add_executable(main
     src/ast/node_registry.cpp
     src/sem_analyzer/semantic_analyzer_registry.cpp
     src/sem_analyzer/semantic_dispatch_table.cpp
+    src/core/core_registry.cpp
 )
 
 target_include_directories(main PRIVATE 
@@ -44,6 +45,7 @@ add_executable(bench
     src/ast/node_registry.cpp
     src/sem_analyzer/semantic_analyzer_registry.cpp
     src/sem_analyzer/semantic_dispatch_table.cpp
+    src/core/core_registry.cpp
 )
 
 target_include_directories(bench PRIVATE 

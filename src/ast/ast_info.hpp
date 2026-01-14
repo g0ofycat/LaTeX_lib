@@ -11,12 +11,11 @@ enum class ASTNodeType
 {
     NUMBER,
     VARIABLE,
+    SYMBOL,
     GROUP,
     BINARY_OP,
     UNARY_OP,
-    FUNCTION,
-    COMMAND,
-    SYMBOL
+    COMMAND
 };
 
 struct SemanticInfo

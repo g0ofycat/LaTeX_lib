@@ -3,6 +3,7 @@
 
 #include <string_view>
 #include <vector>
+#include <unordered_map>
 
 #include "./latex_info.hpp"
 
@@ -12,7 +13,7 @@
 
 namespace LatexParser
 {
-    extern const std::vector<CommandInfo> LATEX_COMMANDS;
+    extern const std::unordered_map<std::string_view, CommandInfo> LATEX_COMMANDS;
 
     /// @brief Find the CommandType for a specific CommandType
     /// @param name: The name of the command

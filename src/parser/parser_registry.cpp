@@ -1,6 +1,7 @@
 #include <vector>
 #include <memory>
 #include <stdexcept>
+#include <charconv>
 
 #include "./parser.hpp"
 
@@ -126,7 +127,17 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
     case TokenType::NUMBER:
     {
         Token num = advance();
-        double value = std::stod(std::string(num.Value));
+        double value;
+        auto result = std::from_chars(
+            num.Value.data(),
+            num.Value.data() + num.Value.size(),
+            value);
+
+        if (result.ec != std::errc())
+        {
+            throw ParseError("Invalid number", num.line, num.column);
+        }
+
         return std::make_unique<NumberNode>(value, num.line, num.column);
     }
 
@@ -183,17 +194,26 @@ std::unique_ptr<ASTNode> Parser::parse_command()
 
     std::vector<std::unique_ptr<ASTNode>> collected_args;
 
-    for (int i = 0; i < cmd.Info->Args; ++i)
+    for (ArgType arg_type : cmd.Info->arg_pattern)
     {
-        if (match(TokenType::BRACE_OPEN))
+        if (arg_type == ArgType::OPTIONAL)
+        {
+            if (match(TokenType::BRACKET_OPEN))
+            {
+                advance();
+                collected_args.push_back(parse_expression());
+                expect(TokenType::BRACKET_CLOSE);
+            }
+            else
+            {
+                collected_args.push_back(nullptr);
+            }
+        }
+        else
         {
             expect(TokenType::BRACE_OPEN);
             collected_args.push_back(parse_expression());
             expect(TokenType::BRACE_CLOSE);
-        }
-        else
-        {
-            collected_args.push_back(parse_primary());
         }
     }
 
@@ -210,7 +230,7 @@ std::unique_ptr<ASTNode> Parser::parse_command()
 /// @note Handles: implicit multiplication (2x, xy)
 std::unique_ptr<ASTNode> Parser::parse_factor()
 {
-    auto left = parse_primary();
+    auto left = parse_exponent();
 
     while (true)
     {
@@ -225,13 +245,7 @@ std::unique_ptr<ASTNode> Parser::parse_factor()
             break;
         }
 
-        if (match(TokenType::BRACE_OPEN) &&
-            left->Type == ASTNodeType::FUNCTION)
-        {
-            break;
-        }
-
-        auto right = parse_primary();
+        auto right = parse_exponent();
 
         left = std::make_unique<BinaryOpNode>(
             '*',
@@ -239,6 +253,28 @@ std::unique_ptr<ASTNode> Parser::parse_factor()
             std::move(right),
             left->line,
             left->column);
+    }
+
+    return left;
+}
+
+/// @brief Parse an exponent
+/// @return AST node for exponent
+std::unique_ptr<ASTNode> Parser::parse_exponent()
+{
+    auto left = parse_primary();
+
+    while (match(TokenType::SUPERSCRIPT))
+    {
+        Token op = advance();
+        auto right = parse_primary();
+
+        left = std::make_unique<BinaryOpNode>(
+            '^',
+            std::move(left),
+            std::move(right),
+            op.line,
+            op.column);
     }
 
     return left;

@@ -1,45 +1,23 @@
 #include <iostream>
 #include <benchmark/benchmark.h>
 
-#include "../src/lexer/lexer.hpp"
-#include "../src/parser/parser.hpp"
-#include "../src/sem_analyzer/semantic_analyzer.hpp"
+#include "../core/latex_core.hpp"
 
-static void BM_LexerTokenization(benchmark::State& state) {
-    std::string input = R"(\sqrt{-1})";
+static void BM_LexerTokenization(benchmark::State &state)
+{
+    std::string input = R"(x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} + \sqrt[n]{\frac{x^n + y^n}{1 + \frac{1}{x^2}}})";
 
-    for (auto _ : state) {
-        Lexer benchmark_lexer(input);
-        auto tokens = benchmark_lexer.tokenize();
+    for (auto _ : state)
+    {
+        LatexCore::analyze(input);
 
-        benchmark::DoNotOptimize(tokens);
+        benchmark::DoNotOptimize(input);
     }
 
-    Lexer output_lexer(input);
-
-    auto tokens = output_lexer.tokenize();
-
-    std::cout << "Tokens (" << tokens.size() << "):\n";
-
-    for (const auto& tok : tokens) {
+    for (const auto &error : LatexCore::analyze(input))
+    {
         std::cout << "  "
-                  <<  static_cast<int>(tok.Type)
-                  << "  \"" << tok.Value << "\""
-                  << "  @" << tok.line << ":" << tok.column
-                  << "\n";
-    }
-
-    Parser parser(tokens);
-    auto ast = parser.parse();
-
-    SemanticAnalyzer analyzer;
-    analyzer.analyze(ast);
-
-    std::cout << "Errors (" << analyzer.get_errors().size() << "):";
-
-    for (const auto& error : analyzer.get_errors()) {
-        std::cout << "  "
-                  <<  error.message
+                  << error.message
                   << "  @" << error.line << ":" << error.column
                   << "\n";
     }
