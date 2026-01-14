@@ -132,7 +132,7 @@ public:
 };
 
 // ======================
-// -- STRUCTURAL NODES
+// -- COMMAND NODE
 // ======================
 
 /// @brief Generic LaTeX Command node

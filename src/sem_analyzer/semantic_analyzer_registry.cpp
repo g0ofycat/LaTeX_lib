@@ -101,11 +101,11 @@ void SemanticAnalyzer::visit(CommandNode &node)
 
     if (it != VALIDATOR_DISPATCH_TABLE.end())
     {
-        (this->*(it->second))(node);
+        it->second(this, node); 
     }
 }
 
-/// @brief No division by 0
+/// @brief Check division by 0
 /// @param denominator: Denominator
 void SemanticAnalyzer::check_division_by_zero(const ASTNode *denominator)
 {
@@ -121,74 +121,6 @@ void SemanticAnalyzer::check_division_by_zero(const ASTNode *denominator)
             errors.push_back({"Division by zero",
                               denominator->line,
                               denominator->column});
-        }
-    }
-}
-
-/// @brief Validate sqrt
-/// @param operand: Operand to check
-/// @param line: Line number
-/// @param column: Column number
-void SemanticAnalyzer::validate_sqrt(const ASTNode *operand, int line, int column)
-{
-    if (!operand)
-        return;
-
-    if (operand->Type == ASTNodeType::NUMBER)
-    {
-        const auto *num = static_cast<const NumberNode *>(operand);
-
-        if (num->value < 0.0)
-        {
-            errors.push_back({"Square root of negative number (requires complex numbers)",
-                              line,
-                              column});
-        }
-    }
-
-    if (operand->Type == ASTNodeType::UNARY_OP)
-    {
-        const auto *unary = static_cast<const UnaryOpNode *>(operand);
-
-        if (unary->op == '-' && unary->operand->Type == ASTNodeType::NUMBER)
-        {
-            errors.push_back({"Square root of negative number (requires complex numbers)",
-                              line,
-                              column});
-        }
-    }
-}
-
-/// @brief Validate log
-/// @param operand: Operand to check
-/// @param line: Line number
-/// @param column: Column number
-void SemanticAnalyzer::validate_log(const ASTNode *operand, int line, int column)
-{
-    if (!operand)
-        return;
-
-    if (operand->Type == ASTNodeType::NUMBER)
-    {
-        const auto *num = static_cast<const NumberNode *>(operand);
-
-        if (num->value <= 0.0)
-        {
-            errors.push_back({"Logarithm of non-positive number is undefined",
-                              line,
-                              column});
-        }
-    }
-
-    if (operand->Type == ASTNodeType::UNARY_OP)
-    {
-        const auto *unary = static_cast<const UnaryOpNode *>(operand);
-
-        if (unary->op == '-')
-        {
-            errors.push_back({"Logarithm of negative number is undefined",
-                              line,
-                              column});
         }
     }
 }

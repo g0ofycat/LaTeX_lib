@@ -15,6 +15,7 @@ add_executable(main
     src/parser/parser_registry.cpp
     src/ast/node_registry.cpp
     src/sem_analyzer/semantic_analyzer_registry.cpp
+    src/sem_analyzer/semantic_dispatch_table.cpp
 )
 
 target_include_directories(main PRIVATE 
@@ -42,6 +43,7 @@ add_executable(bench
     src/parser/parser_registry.cpp
     src/ast/node_registry.cpp
     src/sem_analyzer/semantic_analyzer_registry.cpp
+    src/sem_analyzer/semantic_dispatch_table.cpp
 )
 
 target_include_directories(bench PRIVATE 

@@ -8,6 +8,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include <functional>
 
 #include "../ast/ast_node.hpp"
 #include "../ast/ast_visitor.hpp"
@@ -46,7 +47,11 @@ private:
     std::unordered_set<std::string_view> defined_variables;
     std::unordered_map<std::string_view, std::pair<bool, std::pair<int, int>>> variable_usage;
 
-    using ValidatorFunc = void (SemanticAnalyzer::*)(CommandNode &);
+    // ======================
+    // -- DISPATCH DATA
+    // ======================
+
+    using ValidatorFunc = std::function<void(SemanticAnalyzer*, CommandNode&)>;
     static const std::unordered_map<std::string_view, ValidatorFunc> VALIDATOR_DISPATCH_TABLE;
 
     // ======================
@@ -85,9 +90,13 @@ private:
     // -- PRIVATE UTILITY
     // ======================
 
-    /// @brief No division by 0
+    /// @brief Check division by 0
     /// @param denominator: Denominator
     void check_division_by_zero(const ASTNode *denominator);
+
+    /// @brief Validate frac
+    /// @param node: The current node
+    void validate_frac(CommandNode &node);
 
     /// @brief Validate sqrt
     /// @param operand: Operand to check

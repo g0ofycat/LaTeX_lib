@@ -32,7 +32,6 @@ private:
 
     static const std::array<LexerAction, 256> LEXER_DISPATCH_TABLE;
 
-private:
     // ======================
     // -- LEXER UTILITY
     // ======================
