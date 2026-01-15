@@ -12,7 +12,9 @@ enum class CommandType
 {
     SYMBOL,
     UNARY,
-    BINARY
+    BINARY,
+    PREFIX_DELIMITER,
+    POSTFIX_DELIMITER
 };
 
 enum class ArgType

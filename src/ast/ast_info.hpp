@@ -16,7 +16,8 @@ enum class ASTNodeType
     GROUP,
     BINARY_OP,
     UNARY_OP,
-    COMMAND
+    COMMAND,
+    SCRIPT
 };
 
 #endif

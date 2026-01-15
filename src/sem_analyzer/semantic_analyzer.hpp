@@ -90,6 +90,10 @@ private:
     /// @param node: The current node
     void visit(CommandNode &node) override;
 
+    /// @brief Visit a script node
+    /// @param node: The current node
+    void visit(ScriptNode &node) override;
+
     // ======================
     // -- PRIVATE UTILITY
     // ======================

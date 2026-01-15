@@ -129,6 +129,23 @@ void SemanticAnalyzer::visit(CommandNode &node)
     }
 }
 
+/// @brief Visit a script node
+/// @param node: The current node
+void SemanticAnalyzer::visit(ScriptNode &node)
+{
+    node.base->accept(*this);
+
+    if (node.subscript)
+    {
+        node.subscript->accept(*this);
+    }
+
+    if (node.superscript)
+    {
+        node.superscript->accept(*this);
+    }
+}
+
 /// @brief Check division by 0
 /// @param denominator: Denominator
 void SemanticAnalyzer::check_division_by_zero(const ASTNode *denominator)

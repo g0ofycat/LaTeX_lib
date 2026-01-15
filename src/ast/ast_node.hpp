@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string_view>
+#include <stdexcept>
 
 #include "./ast_info.hpp"
 #include "../parser/data/latex_commands.hpp"
@@ -164,6 +165,36 @@ public:
           name(n),
           arguments(std::move(args)),
           cmdInfo(info) {}
+
+    void accept(ASTVisitor &v) override;
+};
+
+// ======================
+// -- OTHER NODES
+// ======================
+
+/// @brief Node representing a base with optional subscript and / or superscript
+class ScriptNode : public ASTNode
+{
+public:
+    std::unique_ptr<ASTNode> base;
+    std::unique_ptr<ASTNode> subscript;
+    std::unique_ptr<ASTNode> superscript;
+
+    ScriptNode(std::unique_ptr<ASTNode> b,
+               std::unique_ptr<ASTNode> sub,
+               std::unique_ptr<ASTNode> sup,
+               int line, int col)
+        : ASTNode(ASTNodeType::SCRIPT, line, col),
+          base(std::move(b)),
+          subscript(std::move(sub)),
+          superscript(std::move(sup))
+    {
+        if (!base)
+        {
+            throw std::invalid_argument("ScriptNode must have a non-null base");
+        }
+    }
 
     void accept(ASTVisitor &v) override;
 };

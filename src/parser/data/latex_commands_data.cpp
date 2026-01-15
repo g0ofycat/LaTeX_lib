@@ -75,7 +75,7 @@ namespace LatexParser
         // -- CALC / OPERATORS
         // ======================
 
-        {"\\lim", {CommandType::UNARY, 4, {ArgType::REQUIRED}}},
+        {"\\lim", {CommandType::UNARY, 4, {}}},
         {"\\sup", {CommandType::UNARY, 4, {ArgType::REQUIRED}}},
         {"\\inf", {CommandType::UNARY, 4, {ArgType::REQUIRED}}},
         {"\\max", {CommandType::UNARY, 4, {ArgType::REQUIRED}}},
@@ -92,14 +92,14 @@ namespace LatexParser
         // -- INTERGRALS / SUMS / PRODUCTS
         // ======================
 
-        {"\\int", {CommandType::UNARY, 2, {ArgType::REQUIRED}}},
-        {"\\iint", {CommandType::UNARY, 2, {ArgType::REQUIRED}}},
-        {"\\iiint", {CommandType::UNARY, 2, {ArgType::REQUIRED}}},
-        {"\\oint", {CommandType::UNARY, 2, {ArgType::REQUIRED}}},
-        {"\\sum", {CommandType::UNARY, 2, {ArgType::REQUIRED}}},
-        {"\\prod", {CommandType::UNARY, 2, {ArgType::REQUIRED}}},
-        {"\\bigcup", {CommandType::UNARY, 2, {ArgType::REQUIRED}}},
-        {"\\bigcap", {CommandType::UNARY, 2, {ArgType::REQUIRED}}},
+        {"\\int", {CommandType::UNARY, 2, {}}},
+        {"\\iint", {CommandType::UNARY, 2, {}}},
+        {"\\iiint", {CommandType::UNARY, 2, {}}},
+        {"\\oint", {CommandType::UNARY, 2, {}}},
+        {"\\sum", {CommandType::UNARY, 2, {}}},
+        {"\\prod", {CommandType::UNARY, 2, {}}},
+        {"\\bigcup", {CommandType::UNARY, 2, {}}},
+        {"\\bigcap", {CommandType::UNARY, 2, {}}},
 
         // ======================
         // -- FRACTIONS / ROOTS / MODIFIERS
@@ -224,13 +224,23 @@ namespace LatexParser
         // -- ENV / STRUCTURES
         // ======================
 
+        {"\\left", {CommandType::PREFIX_DELIMITER, 0, {}}},
+        {"\\right", {CommandType::POSTFIX_DELIMITER, 0, {}}},
+
         {"\\begin", {CommandType::UNARY, 0, {ArgType::REQUIRED}}},
         {"\\end", {CommandType::UNARY, 0, {ArgType::REQUIRED}}},
+
         {"\\cases", {CommandType::UNARY, 0, {ArgType::REQUIRED}}},
         {"\\matrix", {CommandType::UNARY, 0, {ArgType::REQUIRED}}},
         {"\\pmatrix", {CommandType::UNARY, 0, {ArgType::REQUIRED}}},
         {"\\bmatrix", {CommandType::UNARY, 0, {ArgType::REQUIRED}}},
         {"\\vmatrix", {CommandType::UNARY, 0, {ArgType::REQUIRED}}},
         {"\\Vmatrix", {CommandType::UNARY, 0, {ArgType::REQUIRED}}},
+
+        // ======================
+        // -- MISC
+        // ======================
+
+        {"\\to", {CommandType::SYMBOL, 0, {}}},
     };
 }

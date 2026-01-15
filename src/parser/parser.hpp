@@ -1,6 +1,7 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
+#include <string>
 #include <vector>
 #include <memory>
 #include <stdexcept>
@@ -38,75 +39,119 @@ private:
     // -- PARSER DATA
     // ======================
 
-    std::vector<Token> tokens;
-    size_t position = 0;
+    std::vector<Token> _tokens;
+    size_t _position = 0;
 
 private:
     // ======================
     // -- HELPER METHODS
     // ======================
 
-    /// @brief Peek at current token without advancing
-    /// @return Current token
-    Token peek() const;
+    /// @brief Check if at end of token stream
+    /// @return True if at end
+    [[nodiscard]] bool is_at_end() const;
 
-    /// @brief Advance position and return current token
+    /// @brief Get the current token
     /// @return Current token before advancing
-    Token advance();
+    [[nodiscard]] Token current() const;
+
+    /// @brief Peek at next
+    /// @return Current token
+    [[nodiscard]] Token peek_next() const;
+
+    /// @brief Consume the current token
+    /// @return Token
+    Token consume();
 
     /// @brief Check if current token matches given type
     /// @param type: Token type to match
     /// @return True if current token matches type
     bool match(TokenType type);
 
+    /// @brief Convert token type to string
+    /// @param type: The current type
+    /// @return std::string
+    std::string token_type_to_string(TokenType type) const;
+
     /// @brief Expect a specific token type or throw error
     /// @param type: Expected token type
     /// @return The matched token
     Token expect(TokenType type);
 
-    /// @brief Check if at end of token stream
-    /// @return True if at end
-    bool at_end() const;
-
     // ======================
     // -- PARSING METHODS
     // ======================
+
+    /// @brief Parse root of the AST
+    /// @return Root node of the AST
+    std::unique_ptr<ASTNode> parse_root();
+
+    /// @brief Parse a statement
+    /// @return Statement AST node
+    std::unique_ptr<ASTNode> parse_statement();
+
+    /// @brief Parse a assignment statement
+    /// @return AST node for assignment
+    std::unique_ptr<ASTNode> parse_assignment();
+
+    /// @brief Parse relational expressions (lower precedence than +/-)
+    /// @return AST node for relational expression
+    /// @note Handles: =, <, >, <=, >=, etc.
+    std::unique_ptr<ASTNode> parse_relational();
 
     /// @brief Parse a complete expression (lowest precedence)
     /// @return AST node for expression
     /// @note Handles: addition, subtraction
     std::unique_ptr<ASTNode> parse_expression();
 
-    /// @brief Parse a primary expression (highest precedence)
-    /// @return AST node for primary
-    /// @note Handles: numbers, variables, symbols, commands, grouping
-    std::unique_ptr<ASTNode> parse_primary();
-
-    /// @brief Parse a LaTeX command
-    /// @return AST node for command
-    std::unique_ptr<ASTNode> parse_command();
-
-    /// @brief Parse a factor (higher precedence)
-    /// @return AST node for factor
-    /// @note Handles: implicit multiplication (2x, xy)
-    std::unique_ptr<ASTNode> parse_factor();
-
-    /// @brief Parse an exponent
-    /// @return AST node for exponent
-    std::unique_ptr<ASTNode> parse_exponent();
-
     /// @brief Parse a term (medium precedence)
     /// @return AST node for term
     /// @note Handles: multiplication, division
     std::unique_ptr<ASTNode> parse_term();
 
-    /// @brief Parse a assignment statement
-    /// @return AST node for assignment
-    std::unique_ptr<ASTNode> parse_assignment();
+    /// @brief Parse a power/exponentiation (higher precedence)
+    /// @return AST node for power
+    std::unique_ptr<ASTNode> parse_power();
+
+    /// @brief Parse a factor (higher precedence)
+    /// @return AST node for factor
+    std::unique_ptr<ASTNode> parse_prefix();
+
+    /// @brief Parse a primary expression (highest precedence)
+    /// @return AST node for primary
+    /// @note Handles: numbers, variables, symbols, commands, grouping
+    std::unique_ptr<ASTNode> parse_primary();
+
+    // ======================
+    // -- LATEX COMMAND PARSING METHODS
+    // ======================
+
+    /// @brief Parse a LaTeX command
+    /// @return AST node for command
+    std::unique_ptr<ASTNode> parse_command();
+
+    /// @brief Parse subscripts and superscripts
+    /// @param base: Base AST node
+    /// @return AST node for subscript / superscript
+    std::unique_ptr<ASTNode> parse_subsup(std::unique_ptr<ASTNode> base);
+
+    /// @brief Try to parse implicit multiplication
+    /// @param left: Left AST node
+    /// @return AST node for implicit multiplication or left node if no implicit multiplication
+    std::unique_ptr<ASTNode> try_implicit_mul(std::unique_ptr<ASTNode> left);
+
+    // ======================
+    // -- UTILITY
+    // ======================
+
+    /// @brief Get string representation of a token
+    /// @param token: The token to represent
+    /// @return std::string
+    std::string token_repr(const Token &) const;
 
 public:
     // ======================
-    // -- CONSTRUCTOR
+    // -- CONSTRUCTORS
     // ======================
 
     /// @brief Default Constructor
@@ -114,7 +159,7 @@ public:
 
     /// @brief Parser constructor
     /// @param toks: Vector of tokens to parse
-    Parser(std::vector<Token> toks) : tokens(std::move(toks)) {}
+    Parser(std::vector<Token> toks) : _tokens(std::move(toks)) {}
 
     // ======================
     // -- PUBLIC METHODS
