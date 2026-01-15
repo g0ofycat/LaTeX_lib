@@ -146,6 +146,21 @@ void SemanticAnalyzer::visit(ScriptNode &node)
     }
 }
 
+/// @brief Visit a function call node
+/// @param node: The current node
+void SemanticAnalyzer::visit(FunctionCallNode &node)
+{
+    node.function->accept(*this);
+
+    for (auto &arg : node.args)
+    {
+        if (!arg)
+            continue;
+
+        arg->accept(*this);
+    }
+}
+
 /// @brief Check division by 0
 /// @param denominator: Denominator
 void SemanticAnalyzer::check_division_by_zero(const ASTNode *denominator)

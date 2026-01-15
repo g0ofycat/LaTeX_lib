@@ -14,7 +14,11 @@ enum class CommandType
     UNARY,
     BINARY,
     PREFIX_DELIMITER,
-    POSTFIX_DELIMITER
+    POSTFIX_DELIMITER,
+    MATH,
+    TEXT,
+    ACCENT,
+    UNKNOWN
 };
 
 enum class ArgType
@@ -25,9 +29,11 @@ enum class ArgType
 
 struct CommandInfo
 {
-    CommandType Type;                 // CommandType: Type of command
-    int Precedence;                   // int: Order of Operations
-    std::vector<ArgType> arg_pattern; // std::vector<ArgType>: Pattern of arguments
+    CommandType type = CommandType::UNKNOWN; // CommandType: Type of command
+    int mandatory_args = 0;                  // int: # of mandatory args
+    int optional_args = 0;                   // int: # of optional args
+    bool allows_subscript = true;            // bool: Allow subscripts
+    bool allows_superscript = true;          // bool: Allow superscripts
 };
 
 #endif

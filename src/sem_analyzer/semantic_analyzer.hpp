@@ -94,6 +94,10 @@ private:
     /// @param node: The current node
     void visit(ScriptNode &node) override;
 
+    /// @brief Visit a function call node
+    /// @param node: The current node
+    void visit(FunctionCallNode &node) override;
+
     // ======================
     // -- PRIVATE UTILITY
     // ======================

@@ -100,14 +100,20 @@ std::string Parser::token_type_to_string(TokenType type) const
 
 /// @brief Expect a specific token type or throw error
 /// @param type: Expected token type
+/// @param msg: Optional message
 /// @return The matched token
-Token Parser::expect(TokenType type)
+Token Parser::expect(TokenType type, const std::string &msg)
 {
     if (!match(type))
     {
-        std::string msg = "Expected '" + token_type_to_string(type) +
-                          "', but found '" + token_repr(current()) + "'";
-        throw ParseError(msg, current().line, current().column);
+        std::string what = msg.empty()
+                               ? "Expected '" + token_type_to_string(type) + "'"
+                               : msg;
+
+        std::string found = token_repr(current());
+
+        throw ParseError(what + ", but found " + found,
+                         current().line, current().column);
     }
 
     return consume();
@@ -134,8 +140,8 @@ std::unique_ptr<ASTNode> Parser::parse()
 
     if (!is_at_end() && current().Type != TokenType::END_OF_FILE)
     {
-        std::string msg = "Unexpected token '" + token_repr(current()) +
-                          "' after complete expression";
+        std::string msg = "Unexpected token " + token_repr(current()) +
+                          " after complete expression";
         throw ParseError(msg, current().line, current().column);
     }
 
@@ -186,13 +192,34 @@ std::unique_ptr<ASTNode> Parser::parse_relational()
 {
     auto left = parse_expression();
 
-    if (match(TokenType::EQUAL))
+    while (match(TokenType::LESS) || match(TokenType::GREATER) || match(TokenType::LESS_EQUAL) || match(TokenType::GREATER_EQUAL))
     {
         Token op = consume();
         auto right = parse_expression();
 
-        return std::make_unique<BinaryOpNode>(
-            '=', std::move(left), std::move(right), op.line, op.column);
+        char op_mapped;
+
+        switch (op.Type)
+        {
+        case TokenType::LESS:
+            op_mapped = '<';
+            break;
+        case TokenType::GREATER:
+            op_mapped = '>';
+            break;
+        case TokenType::LESS_EQUAL:
+            op_mapped = 'L';
+            break;
+        case TokenType::GREATER_EQUAL:
+            op_mapped = 'G';
+            break;
+        default:
+            op_mapped = '?';
+            break;
+        }
+
+        left = std::make_unique<BinaryOpNode>(
+            op_mapped, std::move(left), std::move(right), op.line, op.column);
     }
 
     return left;
@@ -273,9 +300,34 @@ std::unique_ptr<ASTNode> Parser::parse_prefix()
             oper, std::move(expr), op.line, op.column);
     }
 
-    auto base = parse_primary();
+    auto base = parse_postfix();
 
     return parse_subsup(std::move(base));
+}
+
+/// @brief Parse a postfix expression (medium precedence)
+/// @return AST node for postfix
+std::unique_ptr<ASTNode> Parser::parse_postfix()
+{
+    auto expr = parse_primary();
+
+    while (true)
+    {
+        if (match(TokenType::PAREN_OPEN))
+        {
+            expr = try_function_call(std::move(expr));
+        }
+        else if (match(TokenType::SUBSCRIPT) || match(TokenType::SUPERSCRIPT))
+        {
+            expr = parse_subsup(std::move(expr));
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return try_implicit_mul(std::move(expr));
 }
 
 /// @brief Parse a primary expression (highest precedence)
@@ -298,18 +350,14 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
             throw ParseError("Invalid number", tok.line, tok.column);
         }
 
-        auto node = std::make_unique<NumberNode>(val, tok.line, tok.column);
-
-        return try_implicit_mul(std::move(node));
+        return std::make_unique<NumberNode>(val, tok.line, tok.column);
     }
 
     case TokenType::IDENTIFIER:
     {
         consume();
 
-        auto node = std::make_unique<VariableNode>(tok.Value, tok.line, tok.column);
-
-        return try_implicit_mul(std::move(node));
+        return std::make_unique<VariableNode>(tok.Value, tok.line, tok.column);
     }
 
     case TokenType::COMMAND:
@@ -322,7 +370,14 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_expression();
         expect(TokenType::BRACE_CLOSE);
 
-        return try_implicit_mul(std::move(expr));
+        std::vector<std::unique_ptr<ASTNode>> elements;
+        elements.reserve(1);
+        elements.emplace_back(std::move(expr));
+
+        return std::make_unique<GroupNode>(
+            std::move(elements),
+            tok.line,
+            tok.column);
     }
 
     case TokenType::PAREN_OPEN:
@@ -332,7 +387,20 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_expression();
         expect(TokenType::PAREN_CLOSE);
 
-        return try_implicit_mul(std::move(expr));
+        std::vector<std::unique_ptr<ASTNode>> elements;
+        elements.reserve(1);
+        elements.emplace_back(std::move(expr));
+
+        return std::make_unique<GroupNode>(
+            std::move(elements),
+            tok.line,
+            tok.column);
+    }
+
+    case TokenType::UNKNOWN:
+    {
+        Token tok = consume();
+        return std::make_unique<SymbolNode>(tok.Value, tok.line, tok.column);
     }
 
     default:
@@ -351,21 +419,59 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
 /// @return AST node for command
 std::unique_ptr<ASTNode> Parser::parse_command()
 {
-    Token cmd = consume();
+    Token cmd_token = consume();
+
+    const CommandInfo *info = cmd_token.Info;
+
+    if (!info)
+    {
+        auto sym = std::make_unique<SymbolNode>(cmd_token.Value, cmd_token.line, cmd_token.column);
+
+        return parse_subsup(std::move(sym));
+    }
 
     std::vector<std::unique_ptr<ASTNode>> args;
 
-    while (match(TokenType::BRACKET_OPEN) || match(TokenType::BRACE_OPEN))
-    {
-        bool optional = match(TokenType::BRACKET_OPEN);
+    args.reserve(info->mandatory_args + info->optional_args);
 
-        consume();
+    for (int i = 0; i < info->optional_args; ++i)
+    {
+        if (match(TokenType::BRACKET_OPEN))
+        {
+            consume();
+
+            args.push_back(parse_expression());
+            expect(TokenType::BRACKET_CLOSE, "Expected ']' after optional argument");
+        }
+        else
+        {
+            args.push_back(nullptr);
+        }
+    }
+
+    for (int i = 0; i < info->mandatory_args; ++i)
+    {
+        expect(TokenType::BRACE_OPEN, "Expected '{' for mandatory argument");
         args.push_back(parse_expression());
-        expect(optional ? TokenType::BRACKET_CLOSE : TokenType::BRACE_CLOSE);
+        expect(TokenType::BRACE_CLOSE, "Expected '}' after mandatory argument");
+    }
+
+    size_t expected = info->mandatory_args + info->optional_args;
+
+    if (args.size() != expected)
+    {
+        throw ParseError(
+            "Command '" + std::string(cmd_token.Value) + "' expects " +
+                std::to_string(expected) + " arguments, got " + std::to_string(args.size()),
+            cmd_token.line, cmd_token.column);
     }
 
     auto node = std::make_unique<CommandNode>(
-        cmd.Value, std::move(args), cmd.Info, cmd.line, cmd.column);
+        cmd_token.Value,
+        std::move(args),
+        info,
+        cmd_token.line,
+        cmd_token.column);
 
     return parse_subsup(std::move(node));
 }
@@ -414,31 +520,59 @@ std::unique_ptr<ASTNode> Parser::parse_subsup(std::unique_ptr<ASTNode> base)
 /// @return AST node for implicit multiplication or left node if no implicit multiplication
 std::unique_ptr<ASTNode> Parser::try_implicit_mul(std::unique_ptr<ASTNode> left)
 {
-    if (is_at_end())
-        return left;
-
-    const Token &next = current();
-
-    bool should_mul = false;
-
-    if (left->Type == ASTNodeType::NUMBER ||
-        left->Type == ASTNodeType::VARIABLE ||
-        left->Type == ASTNodeType::COMMAND ||
-        left->Type == ASTNodeType::GROUP)
+    while (true)
     {
+        if (is_at_end())
+            break;
 
-        should_mul = (next.Type == TokenType::NUMBER ||
-                      next.Type == TokenType::IDENTIFIER ||
-                      next.Type == TokenType::COMMAND ||
-                      next.Type == TokenType::PAREN_OPEN);
+        const Token &next = current();
+
+        bool can_mul = (next.Type == TokenType::NUMBER ||
+                        next.Type == TokenType::IDENTIFIER ||
+                        next.Type == TokenType::COMMAND ||
+                        next.Type == TokenType::PAREN_OPEN);
+
+        if (!can_mul)
+            break;
+
+        auto right = parse_prefix();
+
+        left = std::make_unique<BinaryOpNode>('*', std::move(left), std::move(right), left->line, left->column);
     }
 
-    if (!should_mul)
-        return left;
+    return left;
+}
 
-    auto right = parse_prefix();
+/// @brief Try a function call
+/// @param func The function
+/// @return AST node for function call or no function call
+std::unique_ptr<ASTNode> Parser::try_function_call(std::unique_ptr<ASTNode> func)
+{
+    if (!match(TokenType::PAREN_OPEN))
+    {
+        return func;
+    }
 
-    return std::make_unique<BinaryOpNode>(
-        '*', std::move(left), std::move(right),
-        left->line, left->column);
+    Token open_paren = consume();
+
+    std::vector<std::unique_ptr<ASTNode>> args;
+
+    if (!match(TokenType::PAREN_CLOSE))
+    {
+        args.push_back(parse_expression());
+
+        while (match(TokenType::PUNCTUATION) && current().Value == ",")
+        {
+            consume();
+            args.push_back(parse_expression());
+        }
+    }
+
+    expect(TokenType::PAREN_CLOSE, "Expected ')' after function arguments");
+
+    return std::make_unique<FunctionCallNode>(
+        std::move(func),
+        std::move(args),
+        open_paren.line,
+        open_paren.column);
 }

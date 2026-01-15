@@ -5,7 +5,7 @@
 
 static void BM_LexerTokenization(benchmark::State &state)
 {
-    std::string equation = R"(\sqrt{-1})";
+    std::string equation = R"(f(x) = \sqrt{-1})";
 
     for (auto _ : state)
     {
@@ -13,11 +13,6 @@ static void BM_LexerTokenization(benchmark::State &state)
 
         benchmark::DoNotOptimize(core_impl);
     }
-
-    LatexCore core_impl(equation);
-
-    core_impl.print_analysis();
-    core_impl.print_tokens();
 }
 
 BENCHMARK(BM_LexerTokenization);

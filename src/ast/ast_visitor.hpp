@@ -68,6 +68,10 @@ public:
     /// @brief Visit a script node
     /// @param node: The current node
     virtual void visit(ScriptNode &node) = 0;
+
+    /// @brief Visit a function call node
+    /// @param node: The current node
+    virtual void visit(FunctionCallNode &node) = 0;
 };
 
 #endif

@@ -75,8 +75,9 @@ private:
 
     /// @brief Expect a specific token type or throw error
     /// @param type: Expected token type
+    /// @param msg: Optional message
     /// @return The matched token
-    Token expect(TokenType type);
+    Token expect(TokenType type, const std::string &msg = "");
 
     // ======================
     // -- PARSING METHODS
@@ -117,6 +118,10 @@ private:
     /// @return AST node for factor
     std::unique_ptr<ASTNode> parse_prefix();
 
+    /// @brief Parse a postfix expression (medium precedence)
+    /// @return AST node for postfix
+    std::unique_ptr<ASTNode> parse_postfix();
+
     /// @brief Parse a primary expression (highest precedence)
     /// @return AST node for primary
     /// @note Handles: numbers, variables, symbols, commands, grouping
@@ -139,6 +144,11 @@ private:
     /// @param left: Left AST node
     /// @return AST node for implicit multiplication or left node if no implicit multiplication
     std::unique_ptr<ASTNode> try_implicit_mul(std::unique_ptr<ASTNode> left);
+
+    /// @brief Try a function call
+    /// @param func The function
+    /// @return AST node for function call or no function call
+    std::unique_ptr<ASTNode> try_function_call(std::unique_ptr<ASTNode> func);
 
     // ======================
     // -- UTILITY

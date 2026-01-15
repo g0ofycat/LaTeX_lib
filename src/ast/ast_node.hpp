@@ -199,4 +199,22 @@ public:
     void accept(ASTVisitor &v) override;
 };
 
+/// @brief Node representing function calls
+class FunctionCallNode : public ASTNode
+{
+public:
+    std::unique_ptr<ASTNode> function;
+    std::vector<std::unique_ptr<ASTNode>> args;
+
+    FunctionCallNode(
+        std::unique_ptr<ASTNode> func,
+        std::vector<std::unique_ptr<ASTNode>> arguments,
+        int l, int c)
+        : ASTNode(ASTNodeType::FUNCTION_CALL, l, c),
+          function(std::move(func)),
+          args(std::move(arguments)) {}
+
+    void accept(ASTVisitor &v) override;
+};
+
 #endif

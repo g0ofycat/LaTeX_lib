@@ -54,8 +54,8 @@ const std::array<Lexer::LexerAction, 256> Lexer::LEXER_DISPATCH_TABLE = []
     table[(unsigned char)'$'] = &Lexer::handle_math_op;
     table[(unsigned char)'&'] = &Lexer::handle_math_op;
 
-    table[(unsigned char)'('] = &Lexer::handle_punctuation;
-    table[(unsigned char)')'] = &Lexer::handle_punctuation;
+    table[(unsigned char)'('] = &Lexer::handle_paren_open;
+    table[(unsigned char)')'] = &Lexer::handle_paren_close;
     table[(unsigned char)'\''] = &Lexer::handle_punctuation;
     table[(unsigned char)','] = &Lexer::handle_punctuation;
     table[(unsigned char)'.'] = &Lexer::handle_punctuation;
@@ -63,6 +63,10 @@ const std::array<Lexer::LexerAction, 256> Lexer::LEXER_DISPATCH_TABLE = []
     table[(unsigned char)';'] = &Lexer::handle_punctuation;
     table[(unsigned char)'!'] = &Lexer::handle_punctuation;
     table[(unsigned char)'?'] = &Lexer::handle_punctuation;
+
+    table[(unsigned char)'<'] = &Lexer::handle_less;
+    table[(unsigned char)'>'] = &Lexer::handle_greater;
+    table[(unsigned char)'!'] = &Lexer::handle_bang;
 
     table[(unsigned char)'='] = &Lexer::handle_equal;
 
@@ -244,6 +248,20 @@ void Lexer::handle_bracket_close(std::vector<Token> &tokens)
     handle_single_char(tokens, TokenType::BRACKET_CLOSE);
 }
 
+/// @brief DISPATCH: PAREN (OPEN)
+/// @param tokens: The current tokens
+void Lexer::handle_paren_open(std::vector<Token> &tokens)
+{
+    handle_single_char(tokens, TokenType::PAREN_OPEN);
+}
+
+/// @brief DISPATCH: PAREN (CLOSE)
+/// @param tokens: The current tokens
+void Lexer::handle_paren_close(std::vector<Token> &tokens)
+{
+    handle_single_char(tokens, TokenType::PAREN_CLOSE);
+}
+
 /// @brief DISPATCH: PUNCTUATION
 /// @param tokens: The current tokens
 void Lexer::handle_punctuation(std::vector<Token> &tokens)
@@ -256,6 +274,72 @@ void Lexer::handle_punctuation(std::vector<Token> &tokens)
 void Lexer::handle_equal(std::vector<Token> &tokens)
 {
     handle_single_char(tokens, TokenType::EQUAL);
+}
+
+/// @brief DISPATCH: <
+/// @param tokens: The current tokens
+void Lexer::handle_less(std::vector<Token> &tokens)
+{
+    int s_line = line;
+    int s_col = column;
+    size_t s_pos = position;
+    advance();
+
+    if (peek() == '=')
+    {
+        advance();
+        tokens.push_back({std::string_view(input.data() + s_pos, 2),
+                          nullptr, TokenType::LESS_EQUAL, s_line, s_col});
+    }
+    else
+    {
+        tokens.push_back({std::string_view(input.data() + s_pos, 1),
+                          nullptr, TokenType::LESS, s_line, s_col});
+    }
+}
+
+/// @brief DISPATCH: >
+/// @param tokens: The current tokens
+void Lexer::handle_greater(std::vector<Token> &tokens)
+{
+    int s_line = line;
+    int s_col = column;
+    size_t s_pos = position;
+    advance();
+
+    if (peek() == '=')
+    {
+        advance();
+        tokens.push_back({std::string_view(input.data() + s_pos, 2),
+                          nullptr, TokenType::GREATER_EQUAL, s_line, s_col});
+    }
+    else
+    {
+        tokens.push_back({std::string_view(input.data() + s_pos, 1),
+                          nullptr, TokenType::GREATER, s_line, s_col});
+    }
+}
+
+/// @brief DISPATCH: !
+/// @param tokens: The current tokens
+void Lexer::handle_bang(std::vector<Token> &tokens)
+{
+    int s_line = line;
+    int s_col = column;
+    size_t s_pos = position;
+    advance();
+
+    if (peek() == '=')
+    {
+        advance();
+        tokens.push_back({std::string_view(input.data() + s_pos, 2),
+                          nullptr, TokenType::NOT_EQUAL, s_line, s_col});
+    }
+    else
+    {
+        tokens.push_back({std::string_view(input.data() + s_pos, 1),
+                          nullptr, TokenType::PUNCTUATION, s_line, s_col});
+    }
 }
 
 /// @brief DISPATCH: COMMENT

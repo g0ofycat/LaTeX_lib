@@ -93,6 +93,14 @@ private:
     /// @param tokens: The current tokens
     void handle_bracket_close(std::vector<Token> &tokens);
 
+    /// @brief DISPATCH: PAREN (OPEN)
+    /// @param tokens: The current tokens
+    void handle_paren_open(std::vector<Token> &tokens);
+
+    /// @brief DISPATCH: PAREN (CLOSE)
+    /// @param tokens: The current tokens
+    void handle_paren_close(std::vector<Token> &tokens);
+
     /// @brief DISPATCH: PUNCTUATION
     /// @param tokens: The current tokens
     void handle_punctuation(std::vector<Token> &tokens);
@@ -100,6 +108,18 @@ private:
     /// @brief DISPATCH: EQUAL
     /// @param tokens: The current tokens
     void handle_equal(std::vector<Token> &tokens);
+
+    /// @brief DISPATCH: <
+    /// @param tokens: The current tokens
+    void handle_less(std::vector<Token> &tokens);
+
+    /// @brief DISPATCH: >
+    /// @param tokens: The current tokens
+    void handle_greater(std::vector<Token> &tokens);
+
+    /// @brief DISPATCH: !
+    /// @param tokens: The current tokens
+    void handle_bang(std::vector<Token> &tokens);
 
     /// @brief DISPATCH: COMMENT
     /// @param tokens: The current tokens

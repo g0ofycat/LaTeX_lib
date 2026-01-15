@@ -17,7 +17,8 @@ enum class ASTNodeType
     BINARY_OP,
     UNARY_OP,
     COMMAND,
-    SCRIPT
+    SCRIPT,
+    FUNCTION_CALL
 };
 
 #endif
