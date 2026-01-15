@@ -237,6 +237,45 @@ std::unique_ptr<ASTNode> Parser::parse_factor()
         if (at_end())
             break;
 
+        if (left->Type == ASTNodeType::VARIABLE &&
+            match(TokenType::PUNCTUATION) && peek().Value == "(")
+        {
+            advance();
+
+            std::vector<std::unique_ptr<ASTNode>> args;
+
+            if (!match(TokenType::PUNCTUATION) || peek().Value != ")")
+            {
+                args.push_back(parse_expression());
+
+                while (match(TokenType::PUNCTUATION) && peek().Value == ",")
+                {
+                    advance();
+                    args.push_back(parse_expression());
+                }
+            }
+
+            Token close = peek();
+
+            if (close.Type != TokenType::PUNCTUATION || close.Value != ")")
+            {
+                throw ParseError("Expected closing parenthesis", close.line, close.column);
+            }
+
+            advance();
+
+            auto *var = static_cast<VariableNode *>(left.get());
+
+            left = std::make_unique<CommandNode>(
+                var->name,
+                std::move(args),
+                nullptr,
+                left->line,
+                left->column);
+
+            continue;
+        }
+
         if (!(match(TokenType::NUMBER) ||
               match(TokenType::IDENTIFIER) ||
               match(TokenType::COMMAND) ||
@@ -311,27 +350,21 @@ std::unique_ptr<ASTNode> Parser::parse_term()
 /// @return AST node for assignment
 std::unique_ptr<ASTNode> Parser::parse_assignment()
 {
-    if (match(TokenType::IDENTIFIER))
+    auto left = parse_expression();
+
+    if (match(TokenType::EQUAL))
     {
-        Token ident = peek();
+        Token eq = advance();
+        auto right = parse_assignment();
 
-        if (position + 1 < tokens.size() &&
-            tokens[position + 1].Type == TokenType::EQUAL)
-        {
-            advance();
-            advance();
-
-            auto value = parse_assignment();
-
-            return std::make_unique<AssignNode>(
-                std::string(ident.Value),
-                std::move(value),
-                ident.line,
-                ident.column);
-        }
+        return std::make_unique<AssignNode>(
+            std::move(left),
+            std::move(right),
+            eq.line,
+            eq.column);
     }
 
-    return parse_expression();
+    return left;
 }
 
 /// @brief Parse tokens into an AST

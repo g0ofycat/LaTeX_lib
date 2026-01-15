@@ -5,21 +5,13 @@
 
 static void BM_LexerTokenization(benchmark::State &state)
 {
-    std::string input = R"(x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} + \sqrt[n]{\frac{x^n + y^n}{1 + \frac{1}{x^2}}})";
+    std::string equation = R"(f(x) = \sqrt{-1})";
 
     for (auto _ : state)
     {
-        LatexCore::analyze(input);
+        LatexCore core_impl(equation);
 
-        benchmark::DoNotOptimize(input);
-    }
-
-    for (const auto &error : LatexCore::analyze(input))
-    {
-        std::cout << "  "
-                  << error.message
-                  << "  @" << error.line << ":" << error.column
-                  << "\n";
+        benchmark::DoNotOptimize(core_impl);
     }
 }
 

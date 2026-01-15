@@ -7,9 +7,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(benchmark CONFIG REQUIRED)
 
-add_executable(main 
-    testing/benchmark.cpp 
-    src/lexer/lexer_registry.cpp 
+add_executable(main
+    testing/benchmark.cpp
+    src/lexer/lexer_registry.cpp
     src/parser/data/latex_registry.cpp
     src/parser/data/latex_commands_data.cpp
     src/parser/parser_registry.cpp
@@ -38,7 +38,7 @@ target_link_options(main PRIVATE
 
 add_executable(bench
     testing/benchmark.cpp
-    src/lexer/lexer_registry.cpp 
+    src/lexer/lexer_registry.cpp
     src/parser/data/latex_registry.cpp
     src/parser/data/latex_commands_data.cpp
     src/parser/parser_registry.cpp

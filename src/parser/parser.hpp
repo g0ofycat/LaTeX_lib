@@ -109,6 +109,9 @@ public:
     // -- CONSTRUCTOR
     // ======================
 
+    /// @brief Default Constructor
+    Parser() = default;
+
     /// @brief Parser constructor
     /// @param toks: Vector of tokens to parse
     Parser(std::vector<Token> toks) : tokens(std::move(toks)) {}

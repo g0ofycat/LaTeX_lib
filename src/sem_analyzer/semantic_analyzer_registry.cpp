@@ -53,10 +53,24 @@ void SemanticAnalyzer::visit(SymbolNode &node)
 /// @param node: The current node
 void SemanticAnalyzer::visit(AssignNode &node)
 {
-    defined_variables.insert(node.name);
+    if (node.target)
+        node.target->accept(*this);
 
     if (node.value)
         node.value->accept(*this);
+
+    if (node.target && node.target->Type == ASTNodeType::VARIABLE)
+    {
+        const auto *var = static_cast<const VariableNode *>(node.target.get());
+        defined_variables.insert(var->name);
+    }
+
+    if (node.target && node.target->Type == ASTNodeType::NUMBER)
+    {
+        errors.push_back({"Cannot assign to a literal value",
+                          node.line,
+                          node.column});
+    }
 }
 
 /// @brief Visit a group node

@@ -89,13 +89,12 @@ public:
 /// @brief Assignment node (e.g. x = 5)
 struct AssignNode : ASTNode
 {
-    std::string name;
+    std::unique_ptr<ASTNode> target;
     std::unique_ptr<ASTNode> value;
 
-    AssignNode(std::string n, std::unique_ptr<ASTNode> v, int l, int c)
-        : ASTNode(ASTNodeType::ASSIGN, l, c),
-          name(std::move(n)),
-          value(std::move(v)) {}
+    AssignNode(std::unique_ptr<ASTNode> t, std::unique_ptr<ASTNode> v, int line, int col)
+        : ASTNode(ASTNodeType::ASSIGN, line, col),
+          target(std::move(t)), value(std::move(v)) {}
 
     void accept(ASTVisitor &v) override;
 };

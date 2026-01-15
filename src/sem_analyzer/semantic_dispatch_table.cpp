@@ -12,8 +12,12 @@ const std::unordered_map<std::string_view, SemanticAnalyzer::ValidatorFunc> Sema
      }},
     {"\\sqrt", [](SemanticAnalyzer *s, CommandNode &n)
      {
-         if (!n.arguments.empty())
-             s->validate_sqrt(n.arguments[0].get(), n.line, n.column);
+         size_t radicand_idx = n.arguments.size() == 2 ? 1 : 0;
+
+         if (radicand_idx < n.arguments.size() && n.arguments[radicand_idx])
+         {
+             s->validate_sqrt(n.arguments[radicand_idx].get(), n.line, n.column);
+         }
      }},
     {"\\log", [](SemanticAnalyzer *s, CommandNode &n)
      {
