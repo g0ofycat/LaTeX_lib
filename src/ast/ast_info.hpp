@@ -1,8 +1,6 @@
 #ifndef AST_INFO_HPP
 #define AST_INFO_HPP
 
-#include <string>
-
 // ======================
 // -- ENUMS / STRUCTS
 // ======================
@@ -18,7 +16,8 @@ enum class ASTNodeType
     UNARY_OP,
     COMMAND,
     SCRIPT,
-    FUNCTION_CALL
+    FUNCTION_CALL,
+    SEQUENCE
 };
 
 #endif

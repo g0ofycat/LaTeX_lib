@@ -44,3 +44,7 @@ void ScriptNode::accept(ASTVisitor &v) { v.visit(*this); }
 /// @brief Visit a function call node
 /// @param node: The current node
 void FunctionCallNode::accept(ASTVisitor &v) { v.visit(*this); }
+
+/// @brief Visit a sequence node
+/// @param node: The current node
+void SequenceNode::accept(ASTVisitor &v) { v.visit(*this); }

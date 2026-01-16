@@ -161,6 +161,19 @@ void SemanticAnalyzer::visit(FunctionCallNode &node)
     }
 }
 
+/// @brief Visit a sequence node
+/// @param node: The current node
+void SemanticAnalyzer::visit(SequenceNode &node)
+{
+    for (auto &element : node.elements)
+    {
+        if (element)
+        {
+            element->accept(*this);
+        }
+    }
+}
+
 /// @brief Check division by 0
 /// @param denominator: Denominator
 void SemanticAnalyzer::check_division_by_zero(const ASTNode *denominator)

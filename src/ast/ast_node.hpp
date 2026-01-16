@@ -217,4 +217,17 @@ public:
     void accept(ASTVisitor &v) override;
 };
 
+/// @brief Node representing new lines
+class SequenceNode : public ASTNode
+{
+public:
+    std::vector<std::unique_ptr<ASTNode>> elements;
+
+    SequenceNode(std::vector<std::unique_ptr<ASTNode>> elems, int line, int col)
+        : ASTNode(ASTNodeType::SEQUENCE, line, col),
+          elements(std::move(elems)) {}
+
+    void accept(ASTVisitor &visitor) override;
+};
+
 #endif

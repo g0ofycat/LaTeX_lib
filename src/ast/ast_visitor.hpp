@@ -15,6 +15,9 @@ class GroupNode;
 class BinaryOpNode;
 class UnaryOpNode;
 class CommandNode;
+class ScriptNode;
+class FunctionCallNode;
+class SequenceNode;
 
 // ======================
 // -- ASTVisitor
@@ -72,6 +75,10 @@ public:
     /// @brief Visit a function call node
     /// @param node: The current node
     virtual void visit(FunctionCallNode &node) = 0;
+
+    /// @brief Visit a sequence node
+    /// @param node: The current node
+    virtual void visit(SequenceNode &node) = 0;
 };
 
 #endif

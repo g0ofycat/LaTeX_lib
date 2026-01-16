@@ -116,7 +116,25 @@ std::unique_ptr<ASTNode> Parser::parse()
 /// @return Root node of the AST
 std::unique_ptr<ASTNode> Parser::parse_root()
 {
-    return parse_statement();
+    std::vector<std::unique_ptr<ASTNode>> lines;
+
+    while (!is_at_end())
+    {
+        lines.push_back(parse_statement());
+
+        if (match(TokenType::NEWLINE))
+        {
+            consume();
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return lines.size() > 1
+               ? std::make_unique<SequenceNode>(std::move(lines), lines[0]->line, lines[0]->column)
+               : std::move(lines[0]);
 }
 
 /// @brief Parse a statement
@@ -134,16 +152,30 @@ std::unique_ptr<ASTNode> Parser::parse_statement()
 /// @return AST node for assignment
 std::unique_ptr<ASTNode> Parser::parse_assignment()
 {
-    auto left = parse_relational();
+    std::unique_ptr<ASTNode> left;
 
-    if (match(TokenType::EQUAL))
+    if (match(TokenType::EQUAL) || match(TokenType::ALIGNMENT))
     {
-        Token eq = consume();
+        left = std::make_unique<SymbolNode>("", current().line, current().column);
+    }
+    else
+    {
+        left = parse_relational();
+    }
 
+    if (match(TokenType::EQUAL) || match(TokenType::ALIGNMENT))
+    {
+        Token op = consume();
         auto right = parse_assignment();
 
-        return std::make_unique<AssignNode>(
-            std::move(left), std::move(right), eq.line, eq.column);
+        if (op.Type == TokenType::EQUAL)
+        {
+            return std::make_unique<AssignNode>(std::move(left), std::move(right), op.line, op.column);
+        }
+        else
+        {
+            return std::make_unique<BinaryOpNode>('&', std::move(left), std::move(right), op.line, op.column);
+        }
     }
 
     return left;
@@ -398,6 +430,12 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         return std::make_unique<SymbolNode>(tok.Value, tok.line, tok.column);
     }
 
+    case TokenType::ALIGNMENT:
+    {
+        Token tok = consume();
+        return std::make_unique<SymbolNode>(tok.Value, tok.line, tok.column);
+    }
+
     case TokenType::UNKNOWN:
     {
         Token tok = consume();
@@ -449,9 +487,16 @@ std::unique_ptr<ASTNode> Parser::parse_command()
 
     for (int i = 0; i < info->mandatory_args; ++i)
     {
-        expect(TokenType::BRACE_OPEN, "Expected '{' for mandatory argument");
-        args.push_back(parse_assignment());
-        expect(TokenType::BRACE_CLOSE, "Expected '}' after mandatory argument");
+        if (match(TokenType::BRACE_OPEN))
+        {
+            consume();
+            args.push_back(parse_assignment());
+            expect(TokenType::BRACE_CLOSE, "Expected '}' after mandatory argument");
+        }
+        else
+        {
+            args.push_back(parse_primary());
+        }
     }
 
     size_t expected = info->mandatory_args + info->optional_args;

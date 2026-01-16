@@ -98,6 +98,10 @@ private:
     /// @param node: The current node
     void visit(FunctionCallNode &node) override;
 
+    /// @brief Visit a sequence node
+    /// @param node: The current node
+    void visit(SequenceNode &node) override;
+
     // ======================
     // -- PRIVATE UTILITY
     // ======================

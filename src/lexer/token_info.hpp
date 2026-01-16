@@ -35,6 +35,7 @@ enum class TokenType
     ALIGNMENT,
     PUNCTUATION,
     SPACING,
+    NEWLINE,
     EQUAL,
     LESS,
     GREATER,

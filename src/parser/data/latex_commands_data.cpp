@@ -88,6 +88,8 @@ namespace LatexParser
         {"\\ker", {CommandType::MATH, TokenType::COMMAND, 1, 0, true, true}},
         {"\\gcd", {CommandType::MATH, TokenType::COMMAND, 1, 0, true, true}},
 
+        {"\\partial", {CommandType::MATH, TokenType::COMMAND, 1, 0, true, true}},
+
         // ======================
         // -- INTERGRALS / SUMS / PRODUCTS
         // ======================
@@ -206,6 +208,7 @@ namespace LatexParser
         {"\\aleph", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\hbar", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\wp", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
+        {"\\nabla", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
 
         // ======================
         // -- FONTS / TEXT
@@ -242,8 +245,11 @@ namespace LatexParser
         // ======================
 
         {"\\to", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\{", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\}", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\,", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
+        {"\\]", {CommandType::SYMBOL, TokenType::DISPLAY_MATH_OPEN, 0, 0, true, true}},
+        {"\\[", {CommandType::SYMBOL, TokenType::DISPLAY_MATH_CLOSE, 0, 0, true, true}},
+        {"\\{", {CommandType::SYMBOL, TokenType::ESCAPED_BRACE_OPEN, 0, 0, true, true}},
+        {"\\}", {CommandType::SYMBOL, TokenType::ESCAPED_BRACE_CLOSE, 0, 0, true, true}},
+        {"\\,", {CommandType::SYMBOL, TokenType::SPACING, 0, 0, true, true}},
+        {R"(\\)", {CommandType::SYMBOL, TokenType::NEWLINE, 0, 0, true, true}},
     };
 }
