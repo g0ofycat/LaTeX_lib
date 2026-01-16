@@ -110,6 +110,12 @@ class GroupNode : public ASTNode
 public:
     std::vector<std::unique_ptr<ASTNode>> elements;
 
+    GroupNode(std::unique_ptr<ASTNode> single, int l, int c)
+        : ASTNode(ASTNodeType::GROUP, l, c)
+    {
+        elements.push_back(std::move(single));
+    }
+
     GroupNode(std::vector<std::unique_ptr<ASTNode>> elms, int l, int c)
         : ASTNode(ASTNodeType::GROUP, l, c), elements(std::move(elms)) {}
 

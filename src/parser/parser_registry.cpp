@@ -1,10 +1,36 @@
 #include <charconv>
 #include <sstream>
 #include <string>
+#include <array>
 
 #include "./parser.hpp"
 #include "../lexer/token_info.hpp"
 #include "../ast/ast_node.hpp"
+
+// ======================
+// -- INIT
+// ======================
+
+namespace
+{
+    struct ImplicitMulTable
+    {
+        std::array<bool, 256> data{};
+
+        constexpr ImplicitMulTable()
+        {
+            data[static_cast<size_t>(TokenType::NUMBER)] = true;
+            data[static_cast<size_t>(TokenType::IDENTIFIER)] = true;
+            data[static_cast<size_t>(TokenType::COMMAND)] = true;
+            data[static_cast<size_t>(TokenType::PAREN_OPEN)] = true;
+            data[static_cast<size_t>(TokenType::BRACE_OPEN)] = true;
+            data[static_cast<size_t>(TokenType::ESCAPED_BRACE_OPEN)] = true;
+            data[static_cast<size_t>(TokenType::SPACING)] = true;
+        }
+    };
+
+    static constexpr ImplicitMulTable MUL_LOOKUP;
+}
 
 // ======================
 // -- HELPER IMPL.
@@ -64,18 +90,16 @@ bool Parser::match(TokenType type)
 /// @return The matched token
 Token Parser::expect(TokenType type, const std::string &msg)
 {
-    if (!match(type))
+    if (_tokens[_position].Type != type)
     {
-        std::string what = msg.empty()
-                               ? "Expected '" + std::to_string(static_cast<int>(type)) + "'"
-                               : msg;
+        std::string error_msg = msg.empty()
+                                    ? "Expected token type " + std::to_string(static_cast<int>(type))
+                                    : std::string(msg);
 
-        Token current_token = current();
+        Token err_tok = current();
 
-        std::string found = token_repr(current_token);
-
-        throw ParseError(what + ", but found " + found + " @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column),
-                         current_token.line, current_token.column);
+        throw ParseError(error_msg + " but found " + token_repr(err_tok),
+                         err_tok.line, err_tok.column);
     }
 
     return consume();
@@ -370,10 +394,7 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_expression();
         expect(TokenType::ESCAPED_BRACE_CLOSE);
 
-        std::vector<std::unique_ptr<ASTNode>> elements;
-        elements.push_back(std::move(expr));
-
-        return std::make_unique<GroupNode>(std::move(elements), tok.line, tok.column);
+        return std::make_unique<GroupNode>(std::move(expr), tok.line, tok.column);
     }
 
     case TokenType::BRACE_OPEN:
@@ -383,12 +404,8 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_expression();
         expect(TokenType::BRACE_CLOSE);
 
-        std::vector<std::unique_ptr<ASTNode>> elements;
-        elements.reserve(1);
-        elements.emplace_back(std::move(expr));
-
         return std::make_unique<GroupNode>(
-            std::move(elements),
+            std::move(expr),
             current_token.line,
             current_token.column);
     }
@@ -400,12 +417,8 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_assignment();
         expect(TokenType::PAREN_CLOSE);
 
-        std::vector<std::unique_ptr<ASTNode>> elements;
-        elements.reserve(1);
-        elements.emplace_back(std::move(expr));
-
         return std::make_unique<GroupNode>(
-            std::move(elements),
+            std::move(expr),
             current_token.line,
             current_token.column);
     }
@@ -417,11 +430,7 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_expression();
         expect(TokenType::DISPLAY_MATH_CLOSE);
 
-        std::vector<std::unique_ptr<ASTNode>> elements;
-        elements.reserve(1);
-        elements.emplace_back(std::move(expr));
-
-        return std::make_unique<GroupNode>(std::move(elements), current_token.line, current_token.column);
+        return std::make_unique<GroupNode>(std::move(expr), current_token.line, current_token.column);
     }
 
     case TokenType::SPACING:
@@ -564,28 +573,13 @@ std::unique_ptr<ASTNode> Parser::try_implicit_mul(std::unique_ptr<ASTNode> left)
 
         const Token &next = current();
 
-        if (next.Type == TokenType::EQUAL ||
-            next.Type == TokenType::PLUS ||
-            next.Type == TokenType::MINUS ||
-            next.Type == TokenType::LESS ||
-            next.Type == TokenType::GREATER)
-        {
-            break;
-        }
-
-        bool can_mul = (next.Type == TokenType::NUMBER ||
-                        next.Type == TokenType::IDENTIFIER ||
-                        next.Type == TokenType::COMMAND ||
-                        next.Type == TokenType::PAREN_OPEN ||
-                        next.Type == TokenType::BRACE_OPEN ||
-                        next.Type == TokenType::SPACING ||
-                        next.Type == TokenType::ESCAPED_BRACE_OPEN);
-
-        if (!can_mul)
+        if (!MUL_LOOKUP.data[static_cast<size_t>(next.Type)])
             break;
 
         auto right = parse_prefix();
-        left = std::make_unique<BinaryOpNode>('*', std::move(left), std::move(right), left->line, left->column);
+
+        left = std::make_unique<BinaryOpNode>('*', std::move(left), std::move(right),
+                                              left->line, left->column);
     }
 
     return left;
