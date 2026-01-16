@@ -549,14 +549,6 @@ std::unique_ptr<ASTNode> Parser::try_implicit_mul(std::unique_ptr<ASTNode> left)
             break;
         }
 
-        if (next.Type == TokenType::PAREN_CLOSE ||
-            next.Type == TokenType::BRACE_CLOSE ||
-            next.Type == TokenType::ESCAPED_BRACE_CLOSE ||
-            next.Type == TokenType::BRACKET_CLOSE)
-        {
-            break;
-        }
-
         bool can_mul = (next.Type == TokenType::NUMBER ||
                         next.Type == TokenType::IDENTIFIER ||
                         next.Type == TokenType::COMMAND ||
