@@ -88,7 +88,7 @@ namespace LatexParser
         {"\\ker", {CommandType::MATH, TokenType::COMMAND, 1, 0, true, true}},
         {"\\gcd", {CommandType::MATH, TokenType::COMMAND, 1, 0, true, true}},
 
-        {"\\partial", {CommandType::MATH, TokenType::COMMAND, 1, 0, true, true}},
+        {"\\partial", {CommandType::MATH, TokenType::COMMAND, 0, 0, true, true}},
 
         // ======================
         // -- INTERGRALS / SUMS / PRODUCTS
