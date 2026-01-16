@@ -85,6 +85,10 @@ std::string Parser::token_type_to_string(TokenType type) const
         return "'{'";
     case TokenType::BRACE_CLOSE:
         return "'}'";
+    case TokenType::ESCAPED_BRACE_OPEN:
+        return "'\\{'";
+    case TokenType::ESCAPED_BRACE_CLOSE:
+        return "'\\}'";
     case TokenType::BRACKET_OPEN:
         return "'['";
     case TokenType::BRACKET_CLOSE:
@@ -300,9 +304,7 @@ std::unique_ptr<ASTNode> Parser::parse_prefix()
             oper, std::move(expr), op.line, op.column);
     }
 
-    auto base = parse_postfix();
-
-    return parse_subsup(std::move(base));
+    return parse_postfix();
 }
 
 /// @brief Parse a postfix expression (medium precedence)
@@ -316,6 +318,10 @@ std::unique_ptr<ASTNode> Parser::parse_postfix()
         if (match(TokenType::PAREN_OPEN))
         {
             expr = try_function_call(std::move(expr));
+        }
+        else if (match(TokenType::BRACE_OPEN) || match(TokenType::ESCAPED_BRACE_OPEN))
+        {
+            expr = try_braced_call(std::move(expr));
         }
         else if (match(TokenType::SUBSCRIPT) || match(TokenType::SUPERSCRIPT))
         {
@@ -361,7 +367,22 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
     }
 
     case TokenType::COMMAND:
+    {
         return parse_command();
+    }
+
+    case TokenType::ESCAPED_BRACE_OPEN:
+    {
+        Token tok = consume();
+
+        auto expr = parse_expression();
+        expect(TokenType::ESCAPED_BRACE_CLOSE, "Missing closing '\\}'");
+
+        std::vector<std::unique_ptr<ASTNode>> elements;
+        elements.push_back(std::move(expr));
+
+        return std::make_unique<GroupNode>(std::move(elements), tok.line, tok.column);
+    }
 
     case TokenType::BRACE_OPEN:
     {
@@ -425,9 +446,7 @@ std::unique_ptr<ASTNode> Parser::parse_command()
 
     if (!info)
     {
-        auto sym = std::make_unique<SymbolNode>(cmd_token.Value, cmd_token.line, cmd_token.column);
-
-        return parse_subsup(std::move(sym));
+        return std::make_unique<SymbolNode>(cmd_token.Value, cmd_token.line, cmd_token.column);
     }
 
     std::vector<std::unique_ptr<ASTNode>> args;
@@ -466,14 +485,8 @@ std::unique_ptr<ASTNode> Parser::parse_command()
             cmd_token.line, cmd_token.column);
     }
 
-    auto node = std::make_unique<CommandNode>(
-        cmd_token.Value,
-        std::move(args),
-        info,
-        cmd_token.line,
-        cmd_token.column);
-
-    return parse_subsup(std::move(node));
+    return std::make_unique<CommandNode>(
+        cmd_token.Value, std::move(args), info, cmd_token.line, cmd_token.column);
 }
 
 /// @brief Parse subscripts and superscripts
@@ -527,16 +540,34 @@ std::unique_ptr<ASTNode> Parser::try_implicit_mul(std::unique_ptr<ASTNode> left)
 
         const Token &next = current();
 
+        if (next.Type == TokenType::EQUAL ||
+            next.Type == TokenType::PLUS ||
+            next.Type == TokenType::MINUS ||
+            next.Type == TokenType::LESS ||
+            next.Type == TokenType::GREATER)
+        {
+            break;
+        }
+
+        if (next.Type == TokenType::PAREN_CLOSE ||
+            next.Type == TokenType::BRACE_CLOSE ||
+            next.Type == TokenType::ESCAPED_BRACE_CLOSE ||
+            next.Type == TokenType::BRACKET_CLOSE)
+        {
+            break;
+        }
+
         bool can_mul = (next.Type == TokenType::NUMBER ||
                         next.Type == TokenType::IDENTIFIER ||
                         next.Type == TokenType::COMMAND ||
-                        next.Type == TokenType::PAREN_OPEN);
+                        next.Type == TokenType::PAREN_OPEN ||
+                        next.Type == TokenType::BRACE_OPEN ||
+                        next.Type == TokenType::ESCAPED_BRACE_OPEN);
 
         if (!can_mul)
             break;
 
         auto right = parse_prefix();
-
         left = std::make_unique<BinaryOpNode>('*', std::move(left), std::move(right), left->line, left->column);
     }
 
@@ -575,4 +606,31 @@ std::unique_ptr<ASTNode> Parser::try_function_call(std::unique_ptr<ASTNode> func
         std::move(args),
         open_paren.line,
         open_paren.column);
+}
+
+/// @brief Try to parse arguments in curly braces
+/// @param base The preceding node (the "function" or "operator")
+/// @return AST node representing the applying of the braces to the base
+std::unique_ptr<ASTNode> Parser::try_braced_call(std::unique_ptr<ASTNode> base)
+{
+    bool is_escaped = (current().Type == TokenType::ESCAPED_BRACE_OPEN);
+
+    Token opening = consume();
+
+    auto arg = parse_expression();
+
+    if (is_escaped)
+    {
+        expect(TokenType::ESCAPED_BRACE_CLOSE, "Expected '\\}' after escaped group");
+    }
+    else
+    {
+        expect(TokenType::BRACE_CLOSE, "Expected '}' after group");
+    }
+
+    std::vector<std::unique_ptr<ASTNode>> args;
+    args.push_back(std::move(arg));
+
+    return std::make_unique<FunctionCallNode>(
+        std::move(base), std::move(args), opening.line, opening.column);
 }

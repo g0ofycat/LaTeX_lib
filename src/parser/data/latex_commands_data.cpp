@@ -58,8 +58,8 @@ namespace LatexParser
         // -- TRIG
         // ======================
 
-        {"\\sin", {CommandType::MATH, 1, 0, true, true}},
-        {"\\cos", {CommandType::MATH, 1, 0, true, true}},
+        {"\\sin", {CommandType::MATH, 0, 0, true, true}},
+        {"\\cos", {CommandType::MATH, 0, 0, true, true}},
         {"\\tan", {CommandType::MATH, 1, 0, true, true}},
         {"\\csc", {CommandType::MATH, 1, 0, true, true}},
         {"\\sec", {CommandType::MATH, 1, 0, true, true}},
@@ -80,9 +80,9 @@ namespace LatexParser
         {"\\inf", {CommandType::MATH, 0, 0, true, true}},
         {"\\max", {CommandType::MATH, 0, 0, true, true}},
         {"\\min", {CommandType::MATH, 0, 0, true, true}},
-        {"\\log", {CommandType::MATH, 1, 0, true, true}},
-        {"\\ln", {CommandType::MATH, 1, 0, true, true}},
-        {"\\exp", {CommandType::MATH, 1, 0, true, true}},
+        {"\\log", {CommandType::MATH, 0, 0, true, true}},
+        {"\\ln", {CommandType::MATH, 0, 0, true, true}},
+        {"\\exp", {CommandType::MATH, 0, 0, true, true}},
         {"\\det", {CommandType::MATH, 1, 0, true, true}},
         {"\\dim", {CommandType::MATH, 1, 0, true, true}},
         {"\\ker", {CommandType::MATH, 1, 0, true, true}},
@@ -242,5 +242,7 @@ namespace LatexParser
         // ======================
 
         {"\\to", {CommandType::SYMBOL, 0, 0, true, true}},
+        {"\\{", {CommandType::SYMBOL, 0, 0, true, true}},
+        {"\\}", {CommandType::SYMBOL, 0, 0, true, true}},
     };
 }

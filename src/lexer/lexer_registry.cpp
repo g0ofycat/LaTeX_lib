@@ -61,7 +61,6 @@ const std::array<Lexer::LexerAction, 256> Lexer::LEXER_DISPATCH_TABLE = []
     table[(unsigned char)'.'] = &Lexer::handle_punctuation;
     table[(unsigned char)':'] = &Lexer::handle_punctuation;
     table[(unsigned char)';'] = &Lexer::handle_punctuation;
-    table[(unsigned char)'!'] = &Lexer::handle_punctuation;
     table[(unsigned char)'?'] = &Lexer::handle_punctuation;
 
     table[(unsigned char)'<'] = &Lexer::handle_less;
@@ -173,9 +172,7 @@ void Lexer::handle_command(std::vector<Token> &tokens)
     if (std::isalpha(static_cast<unsigned char>(c)))
     {
         while (std::isalpha(static_cast<unsigned char>(peek())))
-        {
             advance();
-        }
     }
     else if (c != '\0')
     {
@@ -183,13 +180,29 @@ void Lexer::handle_command(std::vector<Token> &tokens)
     }
 
     std::string_view cmd(input.data() + start, position - start);
+
     const CommandInfo *info = LatexParser::find_command(cmd);
 
-    tokens.push_back({cmd,
-                      info,
-                      info ? TokenType::COMMAND : TokenType::UNKNOWN,
-                      start_line,
-                      start_column});
+    TokenType type;
+
+    if (cmd == "\\{")
+    {
+        type = TokenType::ESCAPED_BRACE_OPEN;
+    }
+    else if (cmd == "\\}")
+    {
+        type = TokenType::ESCAPED_BRACE_CLOSE;
+    }
+    else if (info != nullptr)
+    {
+        type = TokenType::COMMAND;
+    }
+    else
+    {
+        type = TokenType::UNKNOWN;
+    }
+
+    tokens.push_back({cmd, info, type, start_line, start_column});
 }
 
 /// @brief DISPATCH: PLUS

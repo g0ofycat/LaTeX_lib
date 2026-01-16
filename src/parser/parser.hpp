@@ -150,6 +150,11 @@ private:
     /// @return AST node for function call or no function call
     std::unique_ptr<ASTNode> try_function_call(std::unique_ptr<ASTNode> func);
 
+    /// @brief Try to parse arguments in curly braces
+    /// @param base The preceding node (the "function" or "operator")
+    /// @return AST node representing the applying of the braces to the base
+    std::unique_ptr<ASTNode> try_braced_call(std::unique_ptr<ASTNode> base);
+
     // ======================
     // -- UTILITY
     // ======================

@@ -5,7 +5,7 @@
 
 static void BM_LexerTokenization(benchmark::State &state)
 {
-    std::string equation = R"(f(x) = \sqrt{-1})";
+    std::string equation = R"(\mathcal{F}\{f\}(\xi) = \int_{-\infty}^{\infty} f(x)e^{-2\pi i x \xi} dx)";
 
     for (auto _ : state)
     {
