@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "../lexer/token_info.hpp"
+
 // ======================
 // -- ENUMS / STRUCTS
 // ======================
@@ -29,11 +31,12 @@ enum class ArgType
 
 struct CommandInfo
 {
-    CommandType type = CommandType::UNKNOWN; // CommandType: Type of command
-    int mandatory_args = 0;                  // int: # of mandatory args
-    int optional_args = 0;                   // int: # of optional args
-    bool allows_subscript = true;            // bool: Allow subscripts
-    bool allows_superscript = true;          // bool: Allow superscripts
+    CommandType type = CommandType::UNKNOWN;      // CommandType: Type of command
+    TokenType type_override = TokenType::COMMAND; // TokenType: Override the current command type
+    int mandatory_args = 0;                       // int: # of mandatory args
+    int optional_args = 0;                        // int: # of optional args
+    bool allows_subscript = true;                 // bool: Allow subscripts
+    bool allows_superscript = true;               // bool: Allow superscripts
 };
 
 #endif

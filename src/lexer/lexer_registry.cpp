@@ -185,21 +185,9 @@ void Lexer::handle_command(std::vector<Token> &tokens)
 
     TokenType type;
 
-    if (cmd == "\\{")
+    if (info)
     {
-        type = TokenType::ESCAPED_BRACE_OPEN;
-    }
-    else if (cmd == "\\}")
-    {
-        type = TokenType::ESCAPED_BRACE_CLOSE;
-    }
-    else if (info != nullptr)
-    {
-        type = TokenType::COMMAND;
-    }
-    else
-    {
-        type = TokenType::UNKNOWN;
+        type = info->type_override;
     }
 
     tokens.push_back({cmd, info, type, start_line, start_column});

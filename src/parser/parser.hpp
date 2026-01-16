@@ -68,11 +68,6 @@ private:
     /// @return True if current token matches type
     bool match(TokenType type);
 
-    /// @brief Convert token type to string
-    /// @param type: The current type
-    /// @return std::string
-    std::string token_type_to_string(TokenType type) const;
-
     /// @brief Expect a specific token type or throw error
     /// @param type: Expected token type
     /// @param msg: Optional message
@@ -162,7 +157,7 @@ private:
     /// @brief Get string representation of a token
     /// @param token: The token to represent
     /// @return std::string
-    std::string token_repr(const Token &) const;
+    std::string token_repr(const Token &token) const;
 
 public:
     // ======================

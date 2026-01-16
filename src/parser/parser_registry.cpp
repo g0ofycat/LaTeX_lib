@@ -58,50 +58,6 @@ bool Parser::match(TokenType type)
     return current().Type == type;
 }
 
-/// @brief Convert token type to string
-/// @param type: The current type
-/// @return std::string
-std::string Parser::token_type_to_string(TokenType type) const
-{
-    switch (type)
-    {
-    case TokenType::NUMBER:
-        return "number";
-    case TokenType::IDENTIFIER:
-        return "identifier";
-    case TokenType::COMMAND:
-        return "command";
-    case TokenType::PLUS:
-        return "'+'";
-    case TokenType::MINUS:
-        return "'-'";
-    case TokenType::STAR:
-        return "'*'";
-    case TokenType::SLASH:
-        return "'/'";
-    case TokenType::EQUAL:
-        return "'='";
-    case TokenType::BRACE_OPEN:
-        return "'{'";
-    case TokenType::BRACE_CLOSE:
-        return "'}'";
-    case TokenType::ESCAPED_BRACE_OPEN:
-        return "'\\{'";
-    case TokenType::ESCAPED_BRACE_CLOSE:
-        return "'\\}'";
-    case TokenType::BRACKET_OPEN:
-        return "'['";
-    case TokenType::BRACKET_CLOSE:
-        return "']'";
-    case TokenType::PUNCTUATION:
-        return "punctuation";
-    case TokenType::END_OF_FILE:
-        return "end of input";
-    default:
-        return "unknown token";
-    }
-}
-
 /// @brief Expect a specific token type or throw error
 /// @param type: Expected token type
 /// @param msg: Optional message
@@ -111,13 +67,15 @@ Token Parser::expect(TokenType type, const std::string &msg)
     if (!match(type))
     {
         std::string what = msg.empty()
-                               ? "Expected '" + token_type_to_string(type) + "'"
+                               ? "Expected '" + std::to_string(static_cast<int>(type)) + "'"
                                : msg;
 
-        std::string found = token_repr(current());
+        Token current_token = current();
 
-        throw ParseError(what + ", but found " + found,
-                         current().line, current().column);
+        std::string found = token_repr(current_token);
+
+        throw ParseError(what + ", but found " + found + " @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column),
+                         current_token.line, current_token.column);
     }
 
     return consume();
@@ -126,9 +84,9 @@ Token Parser::expect(TokenType type, const std::string &msg)
 /// @brief Get string representation of a token
 /// @param token: The token to represent
 /// @return std::string
-std::string Parser::token_repr(const Token &t) const
+std::string Parser::token_repr(const Token &token) const
 {
-    return "'" + std::string(t.Value) + "' (" + token_type_to_string(t.Type) + ")";
+    return "'" + std::string(token.Value) + "' (" + std::to_string(static_cast<int>(token.Type)) + ")";
 }
 
 // ======================
@@ -142,11 +100,13 @@ std::unique_ptr<ASTNode> Parser::parse()
 {
     auto node = parse_root();
 
-    if (!is_at_end() && current().Type != TokenType::END_OF_FILE)
+    Token current_token = current();
+
+    if (!is_at_end())
     {
-        std::string msg = "Unexpected token " + token_repr(current()) +
-                          " after complete expression";
-        throw ParseError(msg, current().line, current().column);
+        std::string msg = "Unexpected token " + token_repr(current_token) +
+                          " after complete expression" + " @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column);
+        throw ParseError(msg, current_token.line, current_token.column);
     }
 
     return node;
@@ -341,29 +301,29 @@ std::unique_ptr<ASTNode> Parser::parse_postfix()
 /// @note Handles: numbers, variables, symbols, commands, grouping
 std::unique_ptr<ASTNode> Parser::parse_primary()
 {
-    Token tok = current();
+    Token current_token = current();
 
-    switch (tok.Type)
+    switch (current_token.Type)
     {
     case TokenType::NUMBER:
     {
         consume();
         double val = 0.0;
-        auto [ptr, ec] = std::from_chars(tok.Value.data(),
-                                         tok.Value.data() + tok.Value.size(), val);
+        auto [ptr, ec] = std::from_chars(current_token.Value.data(),
+                                         current_token.Value.data() + current_token.Value.size(), val);
         if (ec != std::errc{})
         {
-            throw ParseError("Invalid number", tok.line, tok.column);
+            throw ParseError("Invalid number @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column), current_token.line, current_token.column);
         }
 
-        return std::make_unique<NumberNode>(val, tok.line, tok.column);
+        return std::make_unique<NumberNode>(val, current_token.line, current_token.column);
     }
 
     case TokenType::IDENTIFIER:
     {
         consume();
 
-        return std::make_unique<VariableNode>(tok.Value, tok.line, tok.column);
+        return std::make_unique<VariableNode>(current_token.Value, current_token.line, current_token.column);
     }
 
     case TokenType::COMMAND:
@@ -376,7 +336,7 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         Token tok = consume();
 
         auto expr = parse_expression();
-        expect(TokenType::ESCAPED_BRACE_CLOSE, "Missing closing '\\}'");
+        expect(TokenType::ESCAPED_BRACE_CLOSE);
 
         std::vector<std::unique_ptr<ASTNode>> elements;
         elements.push_back(std::move(expr));
@@ -397,15 +357,15 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
 
         return std::make_unique<GroupNode>(
             std::move(elements),
-            tok.line,
-            tok.column);
+            current_token.line,
+            current_token.column);
     }
 
     case TokenType::PAREN_OPEN:
     {
         consume();
 
-        auto expr = parse_expression();
+        auto expr = parse_assignment();
         expect(TokenType::PAREN_CLOSE);
 
         std::vector<std::unique_ptr<ASTNode>> elements;
@@ -414,8 +374,28 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
 
         return std::make_unique<GroupNode>(
             std::move(elements),
-            tok.line,
-            tok.column);
+            current_token.line,
+            current_token.column);
+    }
+
+    case TokenType::DISPLAY_MATH_OPEN:
+    {
+        consume();
+
+        auto expr = parse_expression();
+        expect(TokenType::DISPLAY_MATH_CLOSE);
+
+        std::vector<std::unique_ptr<ASTNode>> elements;
+        elements.reserve(1);
+        elements.emplace_back(std::move(expr));
+
+        return std::make_unique<GroupNode>(std::move(elements), current_token.line, current_token.column);
+    }
+
+    case TokenType::SPACING:
+    {
+        Token tok = consume();
+        return std::make_unique<SymbolNode>(tok.Value, tok.line, tok.column);
     }
 
     case TokenType::UNKNOWN:
@@ -426,8 +406,8 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
 
     default:
     {
-        std::string msg = "Unexpected token in primary: " + token_repr(tok);
-        throw ParseError(msg, tok.line, tok.column);
+        std::string msg = "Unexpected token in primary: " + token_repr(current_token) + " @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column);
+        throw ParseError(msg, current_token.line, current_token.column);
     }
     }
 }
@@ -441,7 +421,6 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
 std::unique_ptr<ASTNode> Parser::parse_command()
 {
     Token cmd_token = consume();
-
     const CommandInfo *info = cmd_token.Info;
 
     if (!info)
@@ -459,7 +438,7 @@ std::unique_ptr<ASTNode> Parser::parse_command()
         {
             consume();
 
-            args.push_back(parse_expression());
+            args.push_back(parse_assignment());
             expect(TokenType::BRACKET_CLOSE, "Expected ']' after optional argument");
         }
         else
@@ -471,7 +450,7 @@ std::unique_ptr<ASTNode> Parser::parse_command()
     for (int i = 0; i < info->mandatory_args; ++i)
     {
         expect(TokenType::BRACE_OPEN, "Expected '{' for mandatory argument");
-        args.push_back(parse_expression());
+        args.push_back(parse_assignment());
         expect(TokenType::BRACE_CLOSE, "Expected '}' after mandatory argument");
     }
 
@@ -481,7 +460,7 @@ std::unique_ptr<ASTNode> Parser::parse_command()
     {
         throw ParseError(
             "Command '" + std::string(cmd_token.Value) + "' expects " +
-                std::to_string(expected) + " arguments, got " + std::to_string(args.size()),
+                std::to_string(expected) + " arguments, got " + std::to_string(args.size()) + " @" + std::to_string(cmd_token.line) + ':' + std::to_string(cmd_token.column),
             cmd_token.line, cmd_token.column);
     }
 
@@ -554,6 +533,7 @@ std::unique_ptr<ASTNode> Parser::try_implicit_mul(std::unique_ptr<ASTNode> left)
                         next.Type == TokenType::COMMAND ||
                         next.Type == TokenType::PAREN_OPEN ||
                         next.Type == TokenType::BRACE_OPEN ||
+                        next.Type == TokenType::SPACING ||
                         next.Type == TokenType::ESCAPED_BRACE_OPEN);
 
         if (!can_mul)
@@ -582,12 +562,12 @@ std::unique_ptr<ASTNode> Parser::try_function_call(std::unique_ptr<ASTNode> func
 
     if (!match(TokenType::PAREN_CLOSE))
     {
-        args.push_back(parse_expression());
+        args.push_back(parse_assignment());
 
         while (match(TokenType::PUNCTUATION) && current().Value == ",")
         {
             consume();
-            args.push_back(parse_expression());
+            args.push_back(parse_assignment());
         }
     }
 
@@ -609,7 +589,7 @@ std::unique_ptr<ASTNode> Parser::try_braced_call(std::unique_ptr<ASTNode> base)
 
     Token opening = consume();
 
-    auto arg = parse_expression();
+    auto arg = parse_assignment();
 
     if (is_escaped)
     {

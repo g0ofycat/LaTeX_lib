@@ -3,11 +3,11 @@
 
 #include <string_view>
 
-#include "../parser/data/latex_info.hpp"
-
 // ======================
 // -- ENUMS / STRUCTS
 // ======================
+
+struct CommandInfo;
 
 enum class TokenType
 {
@@ -21,6 +21,8 @@ enum class TokenType
     BRACKET_CLOSE,
     PAREN_OPEN,
     PAREN_CLOSE,
+    DISPLAY_MATH_OPEN,
+    DISPLAY_MATH_CLOSE,
     PLUS,
     MINUS,
     STAR,
@@ -32,6 +34,7 @@ enum class TokenType
     DOLLAR,
     ALIGNMENT,
     PUNCTUATION,
+    SPACING,
     EQUAL,
     LESS,
     GREATER,
