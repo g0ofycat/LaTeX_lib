@@ -5,7 +5,7 @@
 
 static void BM_LexerTokenization(benchmark::State &state)
 {
-    std::string equation = R"(\mathcal{F}\{f\}(\xi) = \int_{-\infty}^{\infty} f(x)e^{-2\pi i x \xi} dx)";
+    std::string equation = R"(\sum_{k=1}^{\infty} \frac{1}{k^2} = \frac{\pi^2}{6})";
 
     for (auto _ : state)
     {

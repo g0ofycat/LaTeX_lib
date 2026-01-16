@@ -505,7 +505,7 @@ std::unique_ptr<ASTNode> Parser::parse_subsup(std::unique_ptr<ASTNode> base)
         {
             consume();
 
-            script = parse_expression();
+            script = parse_assignment();
             expect(TokenType::BRACE_CLOSE);
         }
         else
