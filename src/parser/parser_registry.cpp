@@ -6,6 +6,7 @@
 #include "./parser.hpp"
 #include "../lexer/token_info.hpp"
 #include "../ast/ast_node.hpp"
+#include "../ast/ast_arena.hpp"
 
 // ======================
 // -- INIT
@@ -40,16 +41,13 @@ namespace
 /// @return True if at end
 bool Parser::is_at_end() const
 {
-    return _position >= _tokens.size() || _tokens[_position].Type == TokenType::END_OF_FILE;
+    return _tokens[_position].Type == TokenType::END_OF_FILE;
 }
 
 /// @brief Get the current token
 /// @return Current token before advancing
 Token Parser::current() const
 {
-    if (is_at_end())
-        return _tokens.back();
-
     return _tokens[_position];
 }
 
@@ -67,9 +65,6 @@ Token Parser::peek_next() const
 /// @return Token
 Token Parser::consume()
 {
-    if (is_at_end())
-        return _tokens.back();
-
     return _tokens[_position++];
 }
 
@@ -78,7 +73,7 @@ Token Parser::consume()
 /// @return True if current token matches type
 bool Parser::match(TokenType type)
 {
-    if (is_at_end())
+    if (is_at_end()) [[unlikely]]
         return false;
 
     return current().Type == type;
@@ -105,6 +100,17 @@ Token Parser::expect(TokenType type, const std::string &msg)
     return consume();
 }
 
+/// @brief Create a node
+/// @tparam T Template
+/// @tparam ...Args Template
+/// @param ...args The node to make
+/// @return T*
+template <typename T, typename... Args>
+T *Parser::make_node(Args &&...args)
+{
+    return _arena.alloc<T>(std::forward<Args>(args)...);
+}
+
 /// @brief Get string representation of a token
 /// @param token: The token to represent
 /// @return std::string
@@ -120,17 +126,21 @@ std::string Parser::token_repr(const Token &token) const
 /// @brief Parse tokens into an AST
 /// @return Root node of the AST
 /// @throws ParseError if parsing fails
-std::unique_ptr<ASTNode> Parser::parse()
+ASTNode *Parser::parse()
 {
     auto node = parse_root();
 
-    Token current_token = current();
-
     if (!is_at_end())
     {
-        std::string msg = "Unexpected token " + token_repr(current_token) +
-                          " after complete expression" + " @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column);
-        throw ParseError(msg, current_token.line, current_token.column);
+        Token current_token = current();
+
+        throw ParseError(
+            "Unexpected token " + token_repr(current_token) +
+                " after complete expression @" +
+                std::to_string(current_token.line) + ':' +
+                std::to_string(current_token.column),
+            current_token.line,
+            current_token.column);
     }
 
     return node;
@@ -138,9 +148,10 @@ std::unique_ptr<ASTNode> Parser::parse()
 
 /// @brief Parse root of the AST
 /// @return Root node of the AST
-std::unique_ptr<ASTNode> Parser::parse_root()
+ASTNode *Parser::parse_root()
 {
-    std::vector<std::unique_ptr<ASTNode>> lines;
+    std::vector<ASTNode *> lines;
+    lines.reserve(8);
 
     while (!is_at_end())
     {
@@ -157,13 +168,13 @@ std::unique_ptr<ASTNode> Parser::parse_root()
     }
 
     return lines.size() > 1
-               ? std::make_unique<SequenceNode>(std::move(lines), lines[0]->line, lines[0]->column)
-               : std::move(lines[0]);
+               ? Parser::make_node<SequenceNode>(lines, lines[0]->line, lines[0]->column)
+               : lines[0];
 }
 
 /// @brief Parse a statement
 /// @return Statement AST node
-std::unique_ptr<ASTNode> Parser::parse_statement()
+ASTNode *Parser::parse_statement()
 {
     return parse_assignment();
 }
@@ -174,13 +185,13 @@ std::unique_ptr<ASTNode> Parser::parse_statement()
 
 /// @brief Parse a assignment statement
 /// @return AST node for assignment
-std::unique_ptr<ASTNode> Parser::parse_assignment()
+ASTNode *Parser::parse_assignment()
 {
-    std::unique_ptr<ASTNode> left;
+    ASTNode *left;
 
     if (match(TokenType::EQUAL) || match(TokenType::ALIGNMENT))
     {
-        left = std::make_unique<SymbolNode>("", current().line, current().column);
+        left = Parser::make_node<SymbolNode>("", current().line, current().column);
     }
     else
     {
@@ -194,11 +205,11 @@ std::unique_ptr<ASTNode> Parser::parse_assignment()
 
         if (op.Type == TokenType::EQUAL)
         {
-            return std::make_unique<AssignNode>(std::move(left), std::move(right), op.line, op.column);
+            return Parser::make_node<AssignNode>(left, right, op.line, op.column);
         }
         else
         {
-            return std::make_unique<BinaryOpNode>('&', std::move(left), std::move(right), op.line, op.column);
+            return Parser::make_node<BinaryOpNode>('&', left, right, op.line, op.column);
         }
     }
 
@@ -208,38 +219,26 @@ std::unique_ptr<ASTNode> Parser::parse_assignment()
 /// @brief Parse relational expressions (lower precedence than +/-)
 /// @return AST node for relational expression
 /// @note Handles: =, <, >, <=, >=, etc.
-std::unique_ptr<ASTNode> Parser::parse_relational()
+ASTNode *Parser::parse_relational()
 {
     auto left = parse_expression();
 
-    while (match(TokenType::LESS) || match(TokenType::GREATER) || match(TokenType::LESS_EQUAL) || match(TokenType::GREATER_EQUAL))
+    TokenType current_token_type = current().Type;
+
+    while (current_token_type == TokenType::LESS || current_token_type == TokenType::GREATER ||
+           current_token_type == TokenType::LESS_EQUAL || current_token_type == TokenType::GREATER_EQUAL)
     {
         Token op = consume();
         auto right = parse_expression();
 
-        char op_mapped;
+        char op_mapped = current_token_type == TokenType::LESS ? '<' : current_token_type == TokenType::GREATER  ? '>'
+                                                                   : current_token_type == TokenType::LESS_EQUAL ? 'L'
+                                                                                                                 : 'G';
 
-        switch (op.Type)
-        {
-        case TokenType::LESS:
-            op_mapped = '<';
-            break;
-        case TokenType::GREATER:
-            op_mapped = '>';
-            break;
-        case TokenType::LESS_EQUAL:
-            op_mapped = 'L';
-            break;
-        case TokenType::GREATER_EQUAL:
-            op_mapped = 'G';
-            break;
-        default:
-            op_mapped = '?';
-            break;
-        }
+        left = Parser::make_node<BinaryOpNode>(op_mapped, left, right,
+                                               op.line, op.column);
 
-        left = std::make_unique<BinaryOpNode>(
-            op_mapped, std::move(left), std::move(right), op.line, op.column);
+        current_token_type = current().Type;
     }
 
     return left;
@@ -248,7 +247,7 @@ std::unique_ptr<ASTNode> Parser::parse_relational()
 /// @brief Parse a complete expression (lowest precedence)
 /// @return AST node for expression
 /// @note Handles: addition, subtraction
-std::unique_ptr<ASTNode> Parser::parse_expression()
+ASTNode *Parser::parse_expression()
 {
     auto left = parse_term();
 
@@ -259,8 +258,8 @@ std::unique_ptr<ASTNode> Parser::parse_expression()
 
         char oper = (op.Type == TokenType::PLUS) ? '+' : '-';
 
-        left = std::make_unique<BinaryOpNode>(
-            oper, std::move(left), std::move(right), op.line, op.column);
+        left = Parser::make_node<BinaryOpNode>(
+            oper, left, right, op.line, op.column);
     }
 
     return left;
@@ -269,7 +268,7 @@ std::unique_ptr<ASTNode> Parser::parse_expression()
 /// @brief Parse a term (medium precedence)
 /// @return AST node for term
 /// @note Handles: multiplication, division
-std::unique_ptr<ASTNode> Parser::parse_term()
+ASTNode *Parser::parse_term()
 {
     auto left = parse_power();
 
@@ -280,8 +279,8 @@ std::unique_ptr<ASTNode> Parser::parse_term()
 
         char oper = (op.Type == TokenType::STAR) ? '*' : '/';
 
-        left = std::make_unique<BinaryOpNode>(
-            oper, std::move(left), std::move(right), op.line, op.column);
+        left = Parser::make_node<BinaryOpNode>(
+            oper, left, right, op.line, op.column);
     }
 
     return left;
@@ -289,7 +288,7 @@ std::unique_ptr<ASTNode> Parser::parse_term()
 
 /// @brief Parse a power/exponentiation (higher precedence)
 /// @return AST node for power
-std::unique_ptr<ASTNode> Parser::parse_power()
+ASTNode *Parser::parse_power()
 {
     auto base = parse_prefix();
 
@@ -298,8 +297,8 @@ std::unique_ptr<ASTNode> Parser::parse_power()
         Token op = consume();
         auto exponent = parse_power();
 
-        return std::make_unique<BinaryOpNode>(
-            '^', std::move(base), std::move(exponent), op.line, op.column);
+        return Parser::make_node<BinaryOpNode>(
+            '^', base, exponent, op.line, op.column);
     }
 
     return base;
@@ -307,7 +306,7 @@ std::unique_ptr<ASTNode> Parser::parse_power()
 
 /// @brief Parse a factor (higher precedence)
 /// @return AST node for factor
-std::unique_ptr<ASTNode> Parser::parse_prefix()
+ASTNode *Parser::parse_prefix()
 {
     if (match(TokenType::MINUS) || match(TokenType::PLUS))
     {
@@ -316,8 +315,8 @@ std::unique_ptr<ASTNode> Parser::parse_prefix()
 
         char oper = (op.Type == TokenType::MINUS) ? '-' : '+';
 
-        return std::make_unique<UnaryOpNode>(
-            oper, std::move(expr), op.line, op.column);
+        return Parser::make_node<UnaryOpNode>(
+            oper, expr, op.line, op.column);
     }
 
     return parse_postfix();
@@ -325,7 +324,7 @@ std::unique_ptr<ASTNode> Parser::parse_prefix()
 
 /// @brief Parse a postfix expression (medium precedence)
 /// @return AST node for postfix
-std::unique_ptr<ASTNode> Parser::parse_postfix()
+ASTNode *Parser::parse_postfix()
 {
     auto expr = parse_primary();
 
@@ -333,15 +332,15 @@ std::unique_ptr<ASTNode> Parser::parse_postfix()
     {
         if (match(TokenType::PAREN_OPEN))
         {
-            expr = try_function_call(std::move(expr));
+            expr = try_function_call(expr);
         }
         else if (match(TokenType::BRACE_OPEN) || match(TokenType::ESCAPED_BRACE_OPEN))
         {
-            expr = try_braced_call(std::move(expr));
+            expr = try_braced_call(expr);
         }
         else if (match(TokenType::SUBSCRIPT) || match(TokenType::SUPERSCRIPT))
         {
-            expr = parse_subsup(std::move(expr));
+            expr = parse_subsup(expr);
         }
         else
         {
@@ -349,13 +348,13 @@ std::unique_ptr<ASTNode> Parser::parse_postfix()
         }
     }
 
-    return try_implicit_mul(std::move(expr));
+    return try_implicit_mul(expr);
 }
 
 /// @brief Parse a primary expression (highest precedence)
 /// @return AST node for primary
 /// @note Handles: numbers, variables, symbols, commands, grouping
-std::unique_ptr<ASTNode> Parser::parse_primary()
+ASTNode *Parser::parse_primary()
 {
     Token current_token = current();
 
@@ -372,14 +371,14 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
             throw ParseError("Invalid number @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column), current_token.line, current_token.column);
         }
 
-        return std::make_unique<NumberNode>(val, current_token.line, current_token.column);
+        return Parser::make_node<NumberNode>(val, current_token.line, current_token.column);
     }
 
     case TokenType::IDENTIFIER:
     {
         consume();
 
-        return std::make_unique<VariableNode>(current_token.Value, current_token.line, current_token.column);
+        return Parser::make_node<VariableNode>(current_token.Value, current_token.line, current_token.column);
     }
 
     case TokenType::COMMAND:
@@ -394,7 +393,7 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_expression();
         expect(TokenType::ESCAPED_BRACE_CLOSE);
 
-        return std::make_unique<GroupNode>(std::move(expr), tok.line, tok.column);
+        return Parser::make_node<GroupNode>(expr, tok.line, tok.column);
     }
 
     case TokenType::BRACE_OPEN:
@@ -404,8 +403,8 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_expression();
         expect(TokenType::BRACE_CLOSE);
 
-        return std::make_unique<GroupNode>(
-            std::move(expr),
+        return Parser::make_node<GroupNode>(
+            expr,
             current_token.line,
             current_token.column);
     }
@@ -417,8 +416,8 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_assignment();
         expect(TokenType::PAREN_CLOSE);
 
-        return std::make_unique<GroupNode>(
-            std::move(expr),
+        return Parser::make_node<GroupNode>(
+            expr,
             current_token.line,
             current_token.column);
     }
@@ -430,25 +429,15 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
         auto expr = parse_expression();
         expect(TokenType::DISPLAY_MATH_CLOSE);
 
-        return std::make_unique<GroupNode>(std::move(expr), current_token.line, current_token.column);
+        return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
     }
 
     case TokenType::SPACING:
-    {
-        Token tok = consume();
-        return std::make_unique<SymbolNode>(tok.Value, tok.line, tok.column);
-    }
-
     case TokenType::ALIGNMENT:
-    {
-        Token tok = consume();
-        return std::make_unique<SymbolNode>(tok.Value, tok.line, tok.column);
-    }
-
     case TokenType::UNKNOWN:
     {
         Token tok = consume();
-        return std::make_unique<SymbolNode>(tok.Value, tok.line, tok.column);
+        return Parser::make_node<SymbolNode>(tok.Value, tok.line, tok.column);
     }
 
     default:
@@ -465,17 +454,17 @@ std::unique_ptr<ASTNode> Parser::parse_primary()
 
 /// @brief Parse a LaTeX command
 /// @return AST node for command
-std::unique_ptr<ASTNode> Parser::parse_command()
+ASTNode *Parser::parse_command()
 {
     Token cmd_token = consume();
     const CommandInfo *info = cmd_token.Info;
 
     if (!info)
     {
-        return std::make_unique<SymbolNode>(cmd_token.Value, cmd_token.line, cmd_token.column);
+        return Parser::make_node<SymbolNode>(cmd_token.Value, cmd_token.line, cmd_token.column);
     }
 
-    std::vector<std::unique_ptr<ASTNode>> args;
+    std::vector<ASTNode *> args;
 
     args.reserve(info->mandatory_args + info->optional_args);
 
@@ -518,21 +507,29 @@ std::unique_ptr<ASTNode> Parser::parse_command()
             cmd_token.line, cmd_token.column);
     }
 
-    return std::make_unique<CommandNode>(
-        cmd_token.Value, std::move(args), info, cmd_token.line, cmd_token.column);
+    return Parser::make_node<CommandNode>(
+        cmd_token.Value, args, info, cmd_token.line, cmd_token.column);
 }
 
 /// @brief Parse subscripts and superscripts
 /// @param base: Base AST node
 /// @return AST node for subscript / superscript
-std::unique_ptr<ASTNode> Parser::parse_subsup(std::unique_ptr<ASTNode> base)
+ASTNode *Parser::parse_subsup(ASTNode *base)
 {
+    ASTNode *sub = nullptr;
+    ASTNode *sup = nullptr;
+
     while (match(TokenType::SUBSCRIPT) || match(TokenType::SUPERSCRIPT))
     {
         bool is_super = match(TokenType::SUPERSCRIPT);
         consume();
 
-        std::unique_ptr<ASTNode> script;
+        if ((is_super && sup) || (!is_super && sub))
+        {
+            throw ParseError("Multiple scripts of the same type detected", current().line, current().column);
+        }
+
+        ASTNode *script;
 
         if (match(TokenType::BRACE_OPEN))
         {
@@ -546,15 +543,14 @@ std::unique_ptr<ASTNode> Parser::parse_subsup(std::unique_ptr<ASTNode> base)
             script = parse_prefix();
         }
 
-        base = std::make_unique<ScriptNode>(
-            std::move(base),
-            is_super ? std::move(script) : nullptr,
-            is_super ? nullptr : std::move(script),
-            base->line,
-            base->column);
+        if (is_super)
+            sup = script;
+
+        else
+            sub = script;
     }
 
-    return base;
+    return Parser::make_node<ScriptNode>(base, sub, sup, base->line, base->column);
 }
 
 // ======================
@@ -564,22 +560,26 @@ std::unique_ptr<ASTNode> Parser::parse_subsup(std::unique_ptr<ASTNode> base)
 /// @brief Try to parse implicit multiplication
 /// @param left: Left AST node
 /// @return AST node for implicit multiplication or left node if no implicit multiplication
-std::unique_ptr<ASTNode> Parser::try_implicit_mul(std::unique_ptr<ASTNode> left)
+ASTNode *Parser::try_implicit_mul(ASTNode *left)
 {
-    while (true)
+    while (!is_at_end())
     {
-        if (is_at_end())
+        if (!MUL_LOOKUP.data[static_cast<size_t>(current().Type)])
             break;
 
-        const Token &next = current();
-
-        if (!MUL_LOOKUP.data[static_cast<size_t>(next.Type)])
+        if (match(TokenType::EQUAL) || match(TokenType::PLUS) || match(TokenType::MINUS))
             break;
 
+        size_t last_pos = _position;
         auto right = parse_prefix();
 
-        left = std::make_unique<BinaryOpNode>('*', std::move(left), std::move(right),
-                                              left->line, left->column);
+        if (_position == last_pos)
+        {
+            break;
+        }
+
+        left = Parser::make_node<BinaryOpNode>('*', left, right,
+                                               left->line, left->column);
     }
 
     return left;
@@ -588,7 +588,7 @@ std::unique_ptr<ASTNode> Parser::try_implicit_mul(std::unique_ptr<ASTNode> left)
 /// @brief Try a function call
 /// @param func The function
 /// @return AST node for function call or no function call
-std::unique_ptr<ASTNode> Parser::try_function_call(std::unique_ptr<ASTNode> func)
+ASTNode *Parser::try_function_call(ASTNode *func)
 {
     if (!match(TokenType::PAREN_OPEN))
     {
@@ -597,10 +597,11 @@ std::unique_ptr<ASTNode> Parser::try_function_call(std::unique_ptr<ASTNode> func
 
     Token open_paren = consume();
 
-    std::vector<std::unique_ptr<ASTNode>> args;
+    std::vector<ASTNode *> args;
 
     if (!match(TokenType::PAREN_CLOSE))
     {
+        args.reserve(4);
         args.push_back(parse_assignment());
 
         while (match(TokenType::PUNCTUATION) && current().Value == ",")
@@ -612,9 +613,9 @@ std::unique_ptr<ASTNode> Parser::try_function_call(std::unique_ptr<ASTNode> func
 
     expect(TokenType::PAREN_CLOSE, "Expected ')' after function arguments");
 
-    return std::make_unique<FunctionCallNode>(
-        std::move(func),
-        std::move(args),
+    return Parser::make_node<FunctionCallNode>(
+        func,
+        args,
         open_paren.line,
         open_paren.column);
 }
@@ -622,7 +623,7 @@ std::unique_ptr<ASTNode> Parser::try_function_call(std::unique_ptr<ASTNode> func
 /// @brief Try to parse arguments in curly braces
 /// @param base The preceding node (the "function" or "operator")
 /// @return AST node representing the applying of the braces to the base
-std::unique_ptr<ASTNode> Parser::try_braced_call(std::unique_ptr<ASTNode> base)
+ASTNode *Parser::try_braced_call(ASTNode *base)
 {
     bool is_escaped = (current().Type == TokenType::ESCAPED_BRACE_OPEN);
 
@@ -639,9 +640,9 @@ std::unique_ptr<ASTNode> Parser::try_braced_call(std::unique_ptr<ASTNode> base)
         expect(TokenType::BRACE_CLOSE, "Expected '}' after group");
     }
 
-    std::vector<std::unique_ptr<ASTNode>> args;
-    args.push_back(std::move(arg));
+    std::vector<ASTNode *> args;
+    args.push_back(arg);
 
-    return std::make_unique<FunctionCallNode>(
-        std::move(base), std::move(args), opening.line, opening.column);
+    return Parser::make_node<FunctionCallNode>(
+        base, args, opening.line, opening.column);
 }

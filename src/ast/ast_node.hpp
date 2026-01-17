@@ -75,7 +75,7 @@ public:
     void accept(ASTVisitor &v) override;
 };
 
-/// @brief Symbol node (e.g. \pi)
+/// @brief Symbol node
 class SymbolNode : public ASTNode
 {
 public:
@@ -87,15 +87,16 @@ public:
     void accept(ASTVisitor &v) override;
 };
 
-/// @brief Assignment node (e.g. x = 5)
-struct AssignNode : ASTNode
+/// @brief Assignment node
+class AssignNode : public ASTNode
 {
-    std::unique_ptr<ASTNode> target;
-    std::unique_ptr<ASTNode> value;
+public:
+    ASTNode *target;
+    ASTNode *value;
 
-    AssignNode(std::unique_ptr<ASTNode> t, std::unique_ptr<ASTNode> v, int line, int col)
+    AssignNode(ASTNode *t, ASTNode *v, int line, int col)
         : ASTNode(ASTNodeType::ASSIGN, line, col),
-          target(std::move(t)), value(std::move(v)) {}
+          target(t), value(v) {}
 
     void accept(ASTVisitor &v) override;
 };
@@ -108,16 +109,16 @@ struct AssignNode : ASTNode
 class GroupNode : public ASTNode
 {
 public:
-    std::vector<std::unique_ptr<ASTNode>> elements;
+    std::vector<ASTNode *> elements;
 
-    GroupNode(std::unique_ptr<ASTNode> single, int l, int c)
+    GroupNode(ASTNode *single, int l, int c)
         : ASTNode(ASTNodeType::GROUP, l, c)
     {
-        elements.push_back(std::move(single));
+        elements.push_back(single);
     }
 
-    GroupNode(std::vector<std::unique_ptr<ASTNode>> elms, int l, int c)
-        : ASTNode(ASTNodeType::GROUP, l, c), elements(std::move(elms)) {}
+    GroupNode(std::vector<ASTNode *> elms, int l, int c)
+        : ASTNode(ASTNodeType::GROUP, l, c), elements(elms) {}
 
     void accept(ASTVisitor &v) override;
 };
@@ -127,12 +128,12 @@ class BinaryOpNode : public ASTNode
 {
 public:
     char op;
-    std::unique_ptr<ASTNode> left;
-    std::unique_ptr<ASTNode> right;
+    ASTNode *left;
+    ASTNode *right;
 
-    BinaryOpNode(char operation, std::unique_ptr<ASTNode> l, std::unique_ptr<ASTNode> r, int line, int col)
+    BinaryOpNode(char operation, ASTNode *l, ASTNode *r, int line, int col)
         : ASTNode(ASTNodeType::BINARY_OP, line, col),
-          op(operation), left(std::move(l)), right(std::move(r)) {}
+          op(operation), left(l), right(r) {}
 
     void accept(ASTVisitor &v) override;
 };
@@ -142,11 +143,11 @@ class UnaryOpNode : public ASTNode
 {
 public:
     char op;
-    std::unique_ptr<ASTNode> operand;
+    ASTNode *operand;
 
-    UnaryOpNode(char operation, std::unique_ptr<ASTNode> operand, int line, int col)
+    UnaryOpNode(char operation, ASTNode *operand, int line, int col)
         : ASTNode(ASTNodeType::UNARY_OP, line, col),
-          op(operation), operand(std::move(operand)) {}
+          op(operation), operand(operand) {}
 
     void accept(ASTVisitor &v) override;
 };
@@ -160,16 +161,16 @@ class CommandNode : public ASTNode
 {
 public:
     std::string_view name;
-    std::vector<std::unique_ptr<ASTNode>> arguments;
+    std::vector<ASTNode *> arguments;
     const CommandInfo *cmdInfo;
 
     CommandNode(std::string_view n,
-                std::vector<std::unique_ptr<ASTNode>> args,
+                std::vector<ASTNode *> args,
                 const CommandInfo *info,
                 int l, int c)
         : ASTNode(ASTNodeType::COMMAND, l, c),
           name(n),
-          arguments(std::move(args)),
+          arguments(args),
           cmdInfo(info) {}
 
     void accept(ASTVisitor &v) override;
@@ -183,18 +184,18 @@ public:
 class ScriptNode : public ASTNode
 {
 public:
-    std::unique_ptr<ASTNode> base;
-    std::unique_ptr<ASTNode> subscript;
-    std::unique_ptr<ASTNode> superscript;
+    ASTNode *base;
+    ASTNode *subscript;
+    ASTNode *superscript;
 
-    ScriptNode(std::unique_ptr<ASTNode> b,
-               std::unique_ptr<ASTNode> sub,
-               std::unique_ptr<ASTNode> sup,
+    ScriptNode(ASTNode *b,
+               ASTNode *sub,
+               ASTNode *sup,
                int line, int col)
         : ASTNode(ASTNodeType::SCRIPT, line, col),
-          base(std::move(b)),
-          subscript(std::move(sub)),
-          superscript(std::move(sup))
+          base(b),
+          subscript(sub),
+          superscript(sup)
     {
         if (!base)
         {
@@ -209,16 +210,16 @@ public:
 class FunctionCallNode : public ASTNode
 {
 public:
-    std::unique_ptr<ASTNode> function;
-    std::vector<std::unique_ptr<ASTNode>> args;
+    ASTNode *function;
+    std::vector<ASTNode *> args;
 
     FunctionCallNode(
-        std::unique_ptr<ASTNode> func,
-        std::vector<std::unique_ptr<ASTNode>> arguments,
+        ASTNode *func,
+        std::vector<ASTNode *> arguments,
         int l, int c)
         : ASTNode(ASTNodeType::FUNCTION_CALL, l, c),
           function(std::move(func)),
-          args(std::move(arguments)) {}
+          args(arguments) {}
 
     void accept(ASTVisitor &v) override;
 };
@@ -227,9 +228,9 @@ public:
 class SequenceNode : public ASTNode
 {
 public:
-    std::vector<std::unique_ptr<ASTNode>> elements;
+    std::vector<ASTNode *> elements;
 
-    SequenceNode(std::vector<std::unique_ptr<ASTNode>> elems, int line, int col)
+    SequenceNode(std::vector<ASTNode *> elems, int line, int col)
         : ASTNode(ASTNodeType::SEQUENCE, line, col),
           elements(std::move(elems)) {}
 

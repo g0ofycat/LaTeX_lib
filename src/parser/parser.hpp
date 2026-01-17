@@ -3,11 +3,11 @@
 
 #include <string>
 #include <vector>
-#include <memory>
 #include <stdexcept>
 
 #include "../lexer/token_info.hpp"
 #include "../ast/ast_node.hpp"
+#include "../ast/ast_arena.hpp"
 
 // ======================
 // -- EXCEPTIONS
@@ -39,6 +39,7 @@ private:
     // -- PARSER DATA
     // ======================
 
+    ASTArena _arena;
     std::vector<Token> _tokens;
     size_t _position = 0;
 
@@ -74,53 +75,61 @@ private:
     /// @return The matched token
     Token expect(TokenType type, const std::string &msg = "");
 
+    /// @brief Create a node
+    /// @tparam T Template
+    /// @tparam ...Args Template
+    /// @param ...args The node to make
+    /// @return T*
+    template <typename T, typename... Args>
+    T *make_node(Args &&...args);
+
     // ======================
     // -- PARSING METHODS
     // ======================
 
     /// @brief Parse root of the AST
     /// @return Root node of the AST
-    std::unique_ptr<ASTNode> parse_root();
+    ASTNode *parse_root();
 
     /// @brief Parse a statement
     /// @return Statement AST node
-    std::unique_ptr<ASTNode> parse_statement();
+    ASTNode *parse_statement();
 
     /// @brief Parse a assignment statement
     /// @return AST node for assignment
-    std::unique_ptr<ASTNode> parse_assignment();
+    ASTNode *parse_assignment();
 
     /// @brief Parse relational expressions (lower precedence than +/-)
     /// @return AST node for relational expression
     /// @note Handles: =, <, >, <=, >=, etc.
-    std::unique_ptr<ASTNode> parse_relational();
+    ASTNode *parse_relational();
 
     /// @brief Parse a complete expression (lowest precedence)
     /// @return AST node for expression
     /// @note Handles: addition, subtraction
-    std::unique_ptr<ASTNode> parse_expression();
+    ASTNode *parse_expression();
 
     /// @brief Parse a term (medium precedence)
     /// @return AST node for term
     /// @note Handles: multiplication, division
-    std::unique_ptr<ASTNode> parse_term();
+    ASTNode *parse_term();
 
     /// @brief Parse a power/exponentiation (higher precedence)
     /// @return AST node for power
-    std::unique_ptr<ASTNode> parse_power();
+    ASTNode *parse_power();
 
     /// @brief Parse a factor (higher precedence)
     /// @return AST node for factor
-    std::unique_ptr<ASTNode> parse_prefix();
+    ASTNode *parse_prefix();
 
     /// @brief Parse a postfix expression (medium precedence)
     /// @return AST node for postfix
-    std::unique_ptr<ASTNode> parse_postfix();
+    ASTNode *parse_postfix();
 
     /// @brief Parse a primary expression (highest precedence)
     /// @return AST node for primary
     /// @note Handles: numbers, variables, symbols, commands, grouping
-    std::unique_ptr<ASTNode> parse_primary();
+    ASTNode *parse_primary();
 
     // ======================
     // -- LATEX COMMAND PARSING METHODS
@@ -128,27 +137,27 @@ private:
 
     /// @brief Parse a LaTeX command
     /// @return AST node for command
-    std::unique_ptr<ASTNode> parse_command();
+    ASTNode *parse_command();
 
     /// @brief Parse subscripts and superscripts
     /// @param base: Base AST node
     /// @return AST node for subscript / superscript
-    std::unique_ptr<ASTNode> parse_subsup(std::unique_ptr<ASTNode> base);
+    ASTNode *parse_subsup(ASTNode *base);
 
     /// @brief Try to parse implicit multiplication
     /// @param left: Left AST node
     /// @return AST node for implicit multiplication or left node if no implicit multiplication
-    std::unique_ptr<ASTNode> try_implicit_mul(std::unique_ptr<ASTNode> left);
+    ASTNode *try_implicit_mul(ASTNode *left);
 
     /// @brief Try a function call
     /// @param func The function
     /// @return AST node for function call or no function call
-    std::unique_ptr<ASTNode> try_function_call(std::unique_ptr<ASTNode> func);
+    ASTNode *try_function_call(ASTNode *func);
 
     /// @brief Try to parse arguments in curly braces
     /// @param base The preceding node (the "function" or "operator")
     /// @return AST node representing the applying of the braces to the base
-    std::unique_ptr<ASTNode> try_braced_call(std::unique_ptr<ASTNode> base);
+    ASTNode *try_braced_call(ASTNode *base);
 
     // ======================
     // -- UTILITY
@@ -178,7 +187,7 @@ public:
     /// @brief Parse tokens into an AST
     /// @return Root node of the AST
     /// @throws ParseError if parsing fails
-    std::unique_ptr<ASTNode> parse();
+    ASTNode *parse();
 };
 
 #endif

@@ -8,7 +8,7 @@
 
 /// @brief Analyze an AST for any errors
 /// @param root: AST Root
-void SemanticAnalyzer::analyze(const std::unique_ptr<ASTNode> &root)
+void SemanticAnalyzer::analyze(ASTNode *&root)
 {
     errors.clear();
     defined_variables.clear();
@@ -61,7 +61,7 @@ void SemanticAnalyzer::visit(AssignNode &node)
 
     if (node.target && node.target->Type == ASTNodeType::VARIABLE)
     {
-        const auto *var = static_cast<const VariableNode *>(node.target.get());
+        const auto *var = static_cast<const VariableNode *>(node.target);
         defined_variables.insert(var->name);
     }
 
@@ -97,7 +97,7 @@ void SemanticAnalyzer::visit(BinaryOpNode &node)
 
     if (node.op == '/')
     {
-        check_division_by_zero(node.right.get());
+        check_division_by_zero(node.right);
     }
 }
 

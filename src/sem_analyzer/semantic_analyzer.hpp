@@ -140,7 +140,7 @@ public:
 
     /// @brief Analyze an AST for any errors
     /// @param root: AST Root
-    void analyze(const std::unique_ptr<ASTNode> &root);
+    void analyze(ASTNode *&root);
 
     /// @brief Check to see if the AST has any errors
     bool has_errors() const { return !errors.empty(); }
