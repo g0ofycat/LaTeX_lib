@@ -33,6 +33,14 @@ namespace
     static constexpr ImplicitMulTable MUL_LOOKUP;
 }
 
+const std::unordered_map<TokenType, Parser::PostfixHandler> Parser::POSTFIX_DISPATCH = {
+    {TokenType::PAREN_OPEN, &Parser::try_function_call},
+    {TokenType::BRACE_OPEN, &Parser::try_braced_call},
+    {TokenType::ESCAPED_BRACE_OPEN, &Parser::try_braced_call},
+    {TokenType::SUBSCRIPT, &Parser::parse_subsup},
+    {TokenType::SUPERSCRIPT, &Parser::parse_subsup},
+    {TokenType::FACTORIAL, &Parser::parse_factorial}};
+
 // ======================
 // -- HELPER IMPL.
 // ======================
@@ -328,24 +336,17 @@ ASTNode *Parser::parse_postfix()
 {
     auto expr = parse_primary();
 
-    while (true)
+    while (!is_at_end())
     {
-        if (match(TokenType::PAREN_OPEN))
-        {
-            expr = try_function_call(expr);
-        }
-        else if (match(TokenType::BRACE_OPEN) || match(TokenType::ESCAPED_BRACE_OPEN))
-        {
-            expr = try_braced_call(expr);
-        }
-        else if (match(TokenType::SUBSCRIPT) || match(TokenType::SUPERSCRIPT))
-        {
-            expr = parse_subsup(expr);
-        }
-        else
+        auto it = POSTFIX_DISPATCH.find(current().Type);
+
+        if (it == POSTFIX_DISPATCH.end())
         {
             break;
         }
+
+        PostfixHandler handler = it->second;
+        expr = (this->*handler)(expr);
     }
 
     return try_implicit_mul(expr);
@@ -551,6 +552,16 @@ ASTNode *Parser::parse_subsup(ASTNode *base)
     }
 
     return Parser::make_node<ScriptNode>(base, sub, sup, base->line, base->column);
+}
+
+/// @brief Parse a factorial operator
+/// @param left: The operand to the left of the '!'
+/// @return A UnaryOpNode representing the factorial
+ASTNode *Parser::parse_factorial(ASTNode *left)
+{
+    Token op = consume();
+
+    return Parser::make_node<UnaryOpNode>('!', left, op.line, op.column);
 }
 
 // ======================

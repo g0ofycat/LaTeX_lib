@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <array>
+#include <functional>
 
 #include "./token_info.hpp"
 
@@ -28,7 +29,7 @@ private:
     // -- DISPATCH DATA
     // ======================
 
-    using LexerAction = void (Lexer::*)(std::vector<Token> &);
+    using LexerAction = std::function<void(Lexer *, std::vector<Token> &)>;
 
     static const std::array<LexerAction, 256> LEXER_DISPATCH_TABLE;
 
@@ -61,54 +62,6 @@ private:
     // -- DISPATCH METHODS
     // ======================
 
-    /// @brief DISPATCH: PLUS
-    /// @param tokens: The current tokens
-    void handle_plus(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: MINUS
-    /// @param tokens: The current tokens
-    void handle_minus(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: STAR
-    /// @param tokens: The current tokens
-    void handle_star(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: SLASH
-    /// @param tokens: The current tokens
-    void handle_slash(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: BRACE (OPEN)
-    /// @param tokens: The current tokens
-    void handle_brace_open(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: BRACE (CLOSE)
-    /// @param tokens: The current tokens
-    void handle_brace_close(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: BRACKET (OPEN)
-    /// @param tokens: The current tokens
-    void handle_bracket_open(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: BRACKET (CLOSED)
-    /// @param tokens: The current tokens
-    void handle_bracket_close(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: PAREN (OPEN)
-    /// @param tokens: The current tokens
-    void handle_paren_open(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: PAREN (CLOSE)
-    /// @param tokens: The current tokens
-    void handle_paren_close(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: PUNCTUATION
-    /// @param tokens: The current tokens
-    void handle_punctuation(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: EQUAL
-    /// @param tokens: The current tokens
-    void handle_equal(std::vector<Token> &tokens);
-
     /// @brief DISPATCH: <
     /// @param tokens: The current tokens
     void handle_less(std::vector<Token> &tokens);
@@ -116,10 +69,6 @@ private:
     /// @brief DISPATCH: >
     /// @param tokens: The current tokens
     void handle_greater(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: !
-    /// @param tokens: The current tokens
-    void handle_bang(std::vector<Token> &tokens);
 
     /// @brief DISPATCH: COMMENT
     /// @param tokens: The current tokens
@@ -136,10 +85,6 @@ private:
     /// @brief DISPATCH: IDENTIFIER (variables like x, y, z)
     /// @param tokens: The current tokens
     void handle_identifier(std::vector<Token> &tokens);
-
-    /// @brief DISPATCH: MATH DELIMITERS
-    /// @param tokens: The current tokens
-    void handle_math_op(std::vector<Token> &tokens);
 
 public:
     // ======================

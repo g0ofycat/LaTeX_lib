@@ -43,6 +43,14 @@ private:
     std::vector<Token> _tokens;
     size_t _position = 0;
 
+    // ======================
+    // -- DISPATCH DATA
+    // ======================
+
+    using PostfixHandler = ASTNode *(Parser::*)(ASTNode *);
+
+    static const std::unordered_map<TokenType, PostfixHandler> POSTFIX_DISPATCH;
+
 private:
     // ======================
     // -- HELPER METHODS
@@ -143,6 +151,11 @@ private:
     /// @param base: Base AST node
     /// @return AST node for subscript / superscript
     ASTNode *parse_subsup(ASTNode *base);
+
+    /// @brief Parse a factorial operator
+    /// @param left: The operand to the left of the '!'
+    /// @return A UnaryOpNode representing the factorial
+    ASTNode *parse_factorial(ASTNode *left);
 
     /// @brief Try to parse implicit multiplication
     /// @param left: Left AST node

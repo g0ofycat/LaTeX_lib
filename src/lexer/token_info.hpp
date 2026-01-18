@@ -37,6 +37,7 @@ enum class TokenType
     SPACING,
     NEWLINE,
     EQUAL,
+    FACTORIAL,
     LESS,
     GREATER,
     LESS_EQUAL,
