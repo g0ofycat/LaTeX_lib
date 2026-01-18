@@ -19,6 +19,8 @@ add_executable(main
     src/core/core_registry.cpp
 )
 
+target_compile_options(main PRIVATE -fverbose-asm -save-temps=obj)
+
 target_include_directories(main PRIVATE 
     src/lexer
     src/parser/data
