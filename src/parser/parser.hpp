@@ -107,34 +107,34 @@ private:
     /// @return AST node for assignment
     ASTNode *parse_assignment();
 
-    /// @brief Parse relational expressions (lower precedence than +/-)
+    /// @brief Parse relational expressions
     /// @return AST node for relational expression
-    /// @note Handles: =, <, >, <=, >=, etc.
+    /// @note Handles: =, <, >, <=, >=
     ASTNode *parse_relational();
 
-    /// @brief Parse a complete expression (lowest precedence)
+    /// @brief Parse a complete expression
     /// @return AST node for expression
     /// @note Handles: addition, subtraction
     ASTNode *parse_expression();
 
-    /// @brief Parse a term (medium precedence)
+    /// @brief Parse a term
     /// @return AST node for term
     /// @note Handles: multiplication, division
     ASTNode *parse_term();
 
-    /// @brief Parse a power/exponentiation (higher precedence)
+    /// @brief Parse a power / exponentiation
     /// @return AST node for power
     ASTNode *parse_power();
 
-    /// @brief Parse a factor (higher precedence)
+    /// @brief Parse a factor
     /// @return AST node for factor
     ASTNode *parse_prefix();
 
-    /// @brief Parse a postfix expression (medium precedence)
+    /// @brief Parse a postfix expression
     /// @return AST node for postfix
     ASTNode *parse_postfix();
 
-    /// @brief Parse a primary expression (highest precedence)
+    /// @brief Parse a primary expression
     /// @return AST node for primary
     /// @note Handles: numbers, variables, symbols, commands, grouping
     ASTNode *parse_primary();

@@ -193,8 +193,8 @@ namespace LatexParser
 
         {"\\cdot", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\times", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\pm", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\mp", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
+        {"\\pm", {CommandType::SYMBOL, TokenType::PLUS_MINUS, 0, 0, true, true}},
+        {"\\mp", {CommandType::SYMBOL, TokenType::MINUS_PLUS, 0, 0, true, true}},
         {"\\div", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\star", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\bullet", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},

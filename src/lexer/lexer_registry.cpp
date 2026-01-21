@@ -70,7 +70,6 @@ const std::array<Lexer::LexerAction, 256> Lexer::LEXER_DISPATCH_TABLE = []
     map_char('^', TokenType::SUPERSCRIPT);
     map_char('_', TokenType::SUBSCRIPT);
     map_char('$', TokenType::DOLLAR);
-    map_char('&', TokenType::ALIGNMENT);
 
     map_char('\'', TokenType::PUNCTUATION);
     map_char(',', TokenType::PUNCTUATION);
@@ -84,6 +83,17 @@ const std::array<Lexer::LexerAction, 256> Lexer::LEXER_DISPATCH_TABLE = []
 
     return table;
 }();
+
+const std::unordered_map<char, TokenType> Lexer::ESCAPE_SYMBOL_MAP = {
+    {'[', TokenType::DISPLAY_MATH_OPEN},
+    {']', TokenType::DISPLAY_MATH_CLOSE},
+    {'(', TokenType::INLINE_MATH_OPEN},
+    {')', TokenType::INLINE_MATH_CLOSE},
+    {'{', TokenType::ESCAPED_BRACE_OPEN},
+    {'}', TokenType::ESCAPED_BRACE_CLOSE},
+    {'&', TokenType::ALIGNMENT},
+    {'\\', TokenType::NEWLINE},
+    {',', TokenType::SPACING}};
 
 // ======================
 // -- METHODS
@@ -176,34 +186,57 @@ void Lexer::handle_command(std::vector<Token> &tokens)
 {
     int start_line = line;
     int start_column = column;
-    size_t start = position;
+    size_t start_pos = position;
 
     advance();
 
+    while (peek() == ' ' || peek() == '\t')
+        advance();
+
     char c = peek();
+
+    if (auto it = Lexer::ESCAPE_SYMBOL_MAP.find(c); it != Lexer::ESCAPE_SYMBOL_MAP.end())
+    {
+        advance();
+
+        tokens.push_back({std::string_view(input.data() + start_pos, 2),
+                          nullptr,
+                          it->second,
+                          start_line,
+                          start_column});
+
+        return;
+    }
 
     if (std::isalpha(static_cast<unsigned char>(c)))
     {
         while (std::isalpha(static_cast<unsigned char>(peek())))
+        {
             advance();
+        }
+
+        std::string_view cmd_name(input.data() + start_pos, position - start_pos);
+
+        while (peek() == ' ' || peek() == '\t')
+            advance();
+
+        const CommandInfo *info = LatexParser::find_command(cmd_name);
+
+        TokenType type = info ? info->type_override : TokenType::COMMAND;
+
+        tokens.push_back({cmd_name, info, type, start_line, start_column});
+
+        return;
     }
-    else if (c != '\0')
-    {
+
+    if (c != '\0')
         advance();
-    }
 
-    std::string_view cmd(input.data() + start, position - start);
-
-    const CommandInfo *info = LatexParser::find_command(cmd);
-
-    TokenType type;
-
-    if (info)
-    {
-        type = info->type_override;
-    }
-
-    tokens.push_back({cmd, info, type, start_line, start_column});
+    tokens.push_back({std::string_view(input.data() + start_pos, position - start_pos),
+                      nullptr,
+                      TokenType::COMMAND,
+                      start_line,
+                      start_column});
 }
 
 /// @brief DISPATCH: <

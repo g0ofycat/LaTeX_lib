@@ -12,6 +12,7 @@ struct CommandInfo;
 enum class TokenType
 {
     NUMBER,
+    SYMBOL,
     COMMAND,
     BRACE_OPEN,
     BRACE_CLOSE,
@@ -23,8 +24,12 @@ enum class TokenType
     PAREN_CLOSE,
     DISPLAY_MATH_OPEN,
     DISPLAY_MATH_CLOSE,
+    INLINE_MATH_OPEN,
+    INLINE_MATH_CLOSE,
     PLUS,
     MINUS,
+    PLUS_MINUS,
+    MINUS_PLUS,
     STAR,
     SLASH,
     IDENTIFIER,

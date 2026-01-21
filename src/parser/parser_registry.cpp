@@ -30,7 +30,41 @@ namespace
         }
     };
 
+    struct ExpressionOpTable
+    {
+        std::array<char, 256> data{};
+
+        constexpr ExpressionOpTable()
+        {
+            for (int i = 0; i < 256; i++)
+                data[i] = '\0';
+
+            data[static_cast<size_t>(TokenType::PLUS)] = '+';
+            data[static_cast<size_t>(TokenType::MINUS)] = '-';
+            data[static_cast<size_t>(TokenType::PLUS_MINUS)] = 'P';
+            data[static_cast<size_t>(TokenType::MINUS_PLUS)] = 'M';
+        }
+    };
+
+    struct RelationalOpTable
+    {
+        std::array<char, 256> data{};
+
+        constexpr RelationalOpTable()
+        {
+            for (int i = 0; i < 256; i++)
+                data[i] = '\0';
+
+            data[static_cast<size_t>(TokenType::LESS)] = '<';
+            data[static_cast<size_t>(TokenType::GREATER)] = '>';
+            data[static_cast<size_t>(TokenType::LESS_EQUAL)] = 'L';
+            data[static_cast<size_t>(TokenType::GREATER_EQUAL)] = 'G';
+        }
+    };
+
     static constexpr ImplicitMulTable MUL_LOOKUP;
+    static constexpr ExpressionOpTable EXPR_OP_LOOKUP;
+    static constexpr RelationalOpTable REL_OP_LOOKUP;
 }
 
 const std::unordered_map<TokenType, Parser::PostfixHandler> Parser::POSTFIX_DISPATCH = {
@@ -163,17 +197,17 @@ ASTNode *Parser::parse_root()
 
     while (!is_at_end())
     {
-        lines.push_back(parse_statement());
-
-        if (match(TokenType::NEWLINE))
+        if (match(TokenType::NEWLINE) || match(TokenType::SPACING))
         {
             consume();
+            continue;
         }
-        else
-        {
-            break;
-        }
+
+        lines.push_back(parse_statement());
     }
+
+    if (lines.empty())
+        return nullptr;
 
     return lines.size() > 1
                ? Parser::make_node<SequenceNode>(lines, lines[0]->line, lines[0]->column)
@@ -224,9 +258,9 @@ ASTNode *Parser::parse_assignment()
     return left;
 }
 
-/// @brief Parse relational expressions (lower precedence than +/-)
+/// @brief Parse relational expressions
 /// @return AST node for relational expression
-/// @note Handles: =, <, >, <=, >=, etc.
+/// @note Handles: =, <, >, <=, >=
 ASTNode *Parser::parse_relational()
 {
     auto left = parse_expression();
@@ -239,11 +273,9 @@ ASTNode *Parser::parse_relational()
         Token op = consume();
         auto right = parse_expression();
 
-        char op_mapped = current_token_type == TokenType::LESS ? '<' : current_token_type == TokenType::GREATER  ? '>'
-                                                                   : current_token_type == TokenType::LESS_EQUAL ? 'L'
-                                                                                                                 : 'G';
+        char oper = REL_OP_LOOKUP.data[static_cast<size_t>(op.Type)];
 
-        left = Parser::make_node<BinaryOpNode>(op_mapped, left, right,
+        left = Parser::make_node<BinaryOpNode>(oper, left, right,
                                                op.line, op.column);
 
         current_token_type = current().Type;
@@ -252,19 +284,19 @@ ASTNode *Parser::parse_relational()
     return left;
 }
 
-/// @brief Parse a complete expression (lowest precedence)
+/// @brief Parse a complete expression
 /// @return AST node for expression
 /// @note Handles: addition, subtraction
 ASTNode *Parser::parse_expression()
 {
     auto left = parse_term();
 
-    while (match(TokenType::PLUS) || match(TokenType::MINUS))
+    while (match(TokenType::PLUS) || match(TokenType::MINUS) || match(TokenType::PLUS_MINUS) || match(TokenType::MINUS_PLUS))
     {
         Token op = consume();
         auto right = parse_term();
 
-        char oper = (op.Type == TokenType::PLUS) ? '+' : '-';
+        char oper = EXPR_OP_LOOKUP.data[static_cast<size_t>(op.Type)];
 
         left = Parser::make_node<BinaryOpNode>(
             oper, left, right, op.line, op.column);
@@ -273,7 +305,7 @@ ASTNode *Parser::parse_expression()
     return left;
 }
 
-/// @brief Parse a term (medium precedence)
+/// @brief Parse a term
 /// @return AST node for term
 /// @note Handles: multiplication, division
 ASTNode *Parser::parse_term()
@@ -294,7 +326,7 @@ ASTNode *Parser::parse_term()
     return left;
 }
 
-/// @brief Parse a power/exponentiation (higher precedence)
+/// @brief Parse a power / exponentiation
 /// @return AST node for power
 ASTNode *Parser::parse_power()
 {
@@ -312,7 +344,7 @@ ASTNode *Parser::parse_power()
     return base;
 }
 
-/// @brief Parse a factor (higher precedence)
+/// @brief Parse a factor
 /// @return AST node for factor
 ASTNode *Parser::parse_prefix()
 {
@@ -330,7 +362,7 @@ ASTNode *Parser::parse_prefix()
     return parse_postfix();
 }
 
-/// @brief Parse a postfix expression (medium precedence)
+/// @brief Parse a postfix expression
 /// @return AST node for postfix
 ASTNode *Parser::parse_postfix()
 {
@@ -352,7 +384,7 @@ ASTNode *Parser::parse_postfix()
     return try_implicit_mul(expr);
 }
 
-/// @brief Parse a primary expression (highest precedence)
+/// @brief Parse a primary expression
 /// @return AST node for primary
 /// @note Handles: numbers, variables, symbols, commands, grouping
 ASTNode *Parser::parse_primary()
@@ -401,7 +433,7 @@ ASTNode *Parser::parse_primary()
     {
         consume();
 
-        auto expr = parse_expression();
+        auto expr = parse_assignment();
         expect(TokenType::BRACE_CLOSE);
 
         return Parser::make_node<GroupNode>(
@@ -427,14 +459,25 @@ ASTNode *Parser::parse_primary()
     {
         consume();
 
-        auto expr = parse_expression();
+        auto expr = parse_assignment();
         expect(TokenType::DISPLAY_MATH_CLOSE);
+
+        return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
+    }
+
+    case TokenType::INLINE_MATH_OPEN:
+    {
+        consume();
+
+        auto expr = parse_assignment();
+        expect(TokenType::INLINE_MATH_CLOSE);
 
         return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
     }
 
     case TokenType::SPACING:
     case TokenType::ALIGNMENT:
+    case TokenType::SYMBOL:
     case TokenType::UNKNOWN:
     {
         Token tok = consume();
@@ -484,6 +527,8 @@ ASTNode *Parser::parse_command()
         }
     }
 
+    bool requires_braces = (info->mandatory_args > 1);
+
     for (int i = 0; i < info->mandatory_args; ++i)
     {
         if (match(TokenType::BRACE_OPEN))
@@ -492,20 +537,16 @@ ASTNode *Parser::parse_command()
             args.push_back(parse_assignment());
             expect(TokenType::BRACE_CLOSE, "Expected '}' after mandatory argument");
         }
+        else if (requires_braces)
+        {
+            throw ParseError(
+                "Command '" + std::string(cmd_token.Value) + "' requires braced arguments",
+                cmd_token.line, cmd_token.column);
+        }
         else
         {
             args.push_back(parse_primary());
         }
-    }
-
-    size_t expected = info->mandatory_args + info->optional_args;
-
-    if (args.size() != expected)
-    {
-        throw ParseError(
-            "Command '" + std::string(cmd_token.Value) + "' expects " +
-                std::to_string(expected) + " arguments, got " + std::to_string(args.size()) + " @" + std::to_string(cmd_token.line) + ':' + std::to_string(cmd_token.column),
-            cmd_token.line, cmd_token.column);
     }
 
     return Parser::make_node<CommandNode>(
@@ -576,9 +617,6 @@ ASTNode *Parser::try_implicit_mul(ASTNode *left)
     while (!is_at_end())
     {
         if (!MUL_LOOKUP.data[static_cast<size_t>(current().Type)])
-            break;
-
-        if (match(TokenType::EQUAL) || match(TokenType::PLUS) || match(TokenType::MINUS))
             break;
 
         size_t last_pos = _position;
