@@ -102,6 +102,14 @@ private:
     /// @param node: The current node
     void visit(SequenceNode &node) override;
 
+    /// @brief Visit a environment node
+    /// @param node: The current node
+    void visit(EnvironmentNode &node) override;
+
+    /// @brief Visit a left-right node
+    /// @param node: The current node
+    void visit(LeftRightNode &node) override;
+
     // ======================
     // -- PRIVATE UTILITY
     // ======================

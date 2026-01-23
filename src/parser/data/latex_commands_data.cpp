@@ -126,8 +126,8 @@ namespace LatexParser
         // -- RELATIONS / LOGIC
         // ======================
 
-        {"\\leq", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\geq", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
+        {"\\leq", {CommandType::SYMBOL, TokenType::LESS_EQUAL, 0, 0, true, true}},
+        {"\\geq", {CommandType::SYMBOL, TokenType::GREATER_EQUAL, 0, 0, true, true}},
         {"\\neq", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\equiv", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\approx", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
@@ -191,15 +191,15 @@ namespace LatexParser
         // -- DOTS / MISC SYMBOLS
         // ======================
 
-        {"\\cdot", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\times", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
+        {"\\cdot", {CommandType::SYMBOL, TokenType::STAR, 0, 0, true, true}},
+        {"\\times", {CommandType::SYMBOL, TokenType::STAR, 0, 0, true, true}},
         {"\\pm", {CommandType::SYMBOL, TokenType::PLUS_MINUS, 0, 0, true, true}},
         {"\\mp", {CommandType::SYMBOL, TokenType::MINUS_PLUS, 0, 0, true, true}},
-        {"\\div", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
+        {"\\div", {CommandType::SYMBOL, TokenType::SLASH, 0, 0, true, true}},
         {"\\star", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\bullet", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\dots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\cdots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
+        {"\\cdots", {CommandType::SYMBOL, TokenType::ELLIPSIS, 0, 0, true, true}},
         {"\\ldots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\vdots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\ddots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
@@ -227,11 +227,11 @@ namespace LatexParser
         // -- ENV / STRUCTURES
         // ======================
 
-        {"\\left", {CommandType::PREFIX_DELIMITER, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\right", {CommandType::POSTFIX_DELIMITER, TokenType::COMMAND, 0, 0, true, true}},
+        {"\\left", {CommandType::PREFIX_DELIMITER, TokenType::LEFT_WRAP, 0, 0, true, true}},
+        {"\\right", {CommandType::POSTFIX_DELIMITER, TokenType::RIGHT_WRAP, 0, 0, true, true}},
 
-        {"\\begin", {CommandType::TEXT, TokenType::COMMAND, 1, 0, true, true}},
-        {"\\end", {CommandType::TEXT, TokenType::COMMAND, 1, 0, true, true}},
+        {"\\begin", {CommandType::PREFIX_DELIMITER, TokenType::ENV_BEGIN, 1, 0, true, true}},
+        {"\\end", {CommandType::POSTFIX_DELIMITER, TokenType::ENV_END, 1, 0, true, true}},
 
         {"\\cases", {CommandType::TEXT, TokenType::COMMAND, 1, 0, true, true}},
         {"\\matrix", {CommandType::TEXT, TokenType::COMMAND, 1, 0, true, true}},
@@ -244,12 +244,14 @@ namespace LatexParser
         // -- MISC
         // ======================
 
-        {"\\to", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\]", {CommandType::SYMBOL, TokenType::DISPLAY_MATH_OPEN, 0, 0, true, true}},
-        {"\\[", {CommandType::SYMBOL, TokenType::DISPLAY_MATH_CLOSE, 0, 0, true, true}},
+        {"\\to", {CommandType::SYMBOL, TokenType::ARROW, 0, 0, true, true}},
+
+        {"\\[", {CommandType::SYMBOL, TokenType::DISPLAY_MATH_OPEN, 0, 0, true, true}},
+        {"\\]", {CommandType::SYMBOL, TokenType::DISPLAY_MATH_CLOSE, 0, 0, true, true}},
+        {"\\(", {CommandType::SYMBOL, TokenType::INLINE_MATH_OPEN, 0, 0, true, true}},
+        {"\\)", {CommandType::SYMBOL, TokenType::INLINE_MATH_CLOSE, 0, 0, true, true}},
         {"\\{", {CommandType::SYMBOL, TokenType::ESCAPED_BRACE_OPEN, 0, 0, true, true}},
         {"\\}", {CommandType::SYMBOL, TokenType::ESCAPED_BRACE_CLOSE, 0, 0, true, true}},
-        {"\\,", {CommandType::SYMBOL, TokenType::SPACING, 0, 0, true, true}},
         {R"(\\)", {CommandType::SYMBOL, TokenType::NEWLINE, 0, 0, true, true}},
     };
 }

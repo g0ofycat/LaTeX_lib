@@ -99,6 +99,14 @@ private:
     /// @return Root node of the AST
     ASTNode *parse_root();
 
+    /// @brief Parse a environment
+    /// @return Environment AST node
+    ASTNode *parse_environment();
+
+    /// @brief Parse a left-right construct
+    /// @return LeftRight AST node
+    ASTNode *parse_left_right();
+
     /// @brief Parse a statement
     /// @return Statement AST node
     ASTNode *parse_statement();
@@ -109,17 +117,14 @@ private:
 
     /// @brief Parse relational expressions
     /// @return AST node for relational expression
-    /// @note Handles: =, <, >, <=, >=
     ASTNode *parse_relational();
 
     /// @brief Parse a complete expression
     /// @return AST node for expression
-    /// @note Handles: addition, subtraction
     ASTNode *parse_expression();
 
     /// @brief Parse a term
     /// @return AST node for term
-    /// @note Handles: multiplication, division
     ASTNode *parse_term();
 
     /// @brief Parse a power / exponentiation
@@ -136,7 +141,6 @@ private:
 
     /// @brief Parse a primary expression
     /// @return AST node for primary
-    /// @note Handles: numbers, variables, symbols, commands, grouping
     ASTNode *parse_primary();
 
     // ======================

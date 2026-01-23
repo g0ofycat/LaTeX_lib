@@ -33,8 +33,6 @@ private:
 
     static const std::array<LexerAction, 256> LEXER_DISPATCH_TABLE;
 
-    static const std::unordered_map<char, TokenType> ESCAPE_SYMBOL_MAP;
-
     // ======================
     // -- LEXER UTILITY
     // ======================

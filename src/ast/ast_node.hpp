@@ -237,4 +237,38 @@ public:
     void accept(ASTVisitor &visitor) override;
 };
 
+/// @brief Node representing an environment
+class EnvironmentNode : public ASTNode
+{
+public:
+    std::string_view name;
+    std::vector<std::vector<ASTNode *>> content;
+
+    EnvironmentNode(std::string_view n,
+                    std::vector<std::vector<ASTNode *>> cont,
+                    int l, int c)
+        : ASTNode(ASTNodeType::ENVIRONMENT, l, c),
+          name(n),
+          content(std::move(cont)) {}
+
+    void accept(ASTVisitor &visitor) override;
+};
+
+/// @brief Node representing \left <delim> ... \right <delim>
+class LeftRightNode : public ASTNode
+{
+public:
+    std::string left_delimiter;
+    std::string right_delimiter;
+    ASTNode *content;
+
+    LeftRightNode(std::string left, std::string right, ASTNode *inner, int l, int c)
+        : ASTNode(ASTNodeType::LEFT_RIGHT, l, c),
+          left_delimiter(std::move(left)),
+          right_delimiter(std::move(right)),
+          content(inner) {}
+
+    void accept(ASTVisitor &visitor) override;
+};
+
 #endif

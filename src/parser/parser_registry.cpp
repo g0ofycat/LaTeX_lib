@@ -130,7 +130,7 @@ Token Parser::expect(TokenType type, const std::string &msg)
     if (_tokens[_position].Type != type)
     {
         std::string error_msg = msg.empty()
-                                    ? "Expected token type " + std::to_string(static_cast<int>(type))
+                                    ? "Expected Token Type: (" + std::to_string(static_cast<int>(type)) + ")"
                                     : std::string(msg);
 
         Token err_tok = current();
@@ -214,6 +214,103 @@ ASTNode *Parser::parse_root()
                : lines[0];
 }
 
+/// @brief Parse a environment
+/// @return Environment AST node
+ASTNode *Parser::parse_environment()
+{
+    Token current_token = consume();
+
+    expect(TokenType::BRACE_OPEN);
+    std::string name = std::string(expect(TokenType::IDENTIFIER).Value);
+    expect(TokenType::BRACE_CLOSE);
+
+    if (match(TokenType::BRACE_OPEN))
+    {
+        consume();
+
+        while (!is_at_end() && !match(TokenType::BRACE_CLOSE))
+            consume();
+
+        expect(TokenType::BRACE_CLOSE);
+    }
+
+    std::vector<std::vector<ASTNode *>> body;
+    std::vector<ASTNode *> current_line;
+
+    while (!is_at_end())
+    {
+        if (match(TokenType::ENV_END))
+        {
+            consume();
+
+            expect(TokenType::BRACE_OPEN);
+
+            if (expect(TokenType::IDENTIFIER).Value == name)
+            {
+                expect(TokenType::BRACE_CLOSE);
+                if (!current_line.empty())
+                    body.push_back(std::move(current_line));
+                break;
+            }
+
+            throw ParseError("Mismatched environment closure", current_token.line, current_token.column);
+        }
+
+        current_line.push_back(parse_assignment());
+
+        if (match(TokenType::ALIGNMENT))
+        {
+            consume();
+        }
+        else if (match(TokenType::NEWLINE))
+        {
+            consume();
+            body.push_back(std::move(current_line));
+            current_line.clear();
+        }
+    }
+
+    return make_node<EnvironmentNode>(name, body, current_token.line, current_token.column);
+}
+
+/// @brief Parse a left-right construct
+/// @return LeftRight AST node
+ASTNode *Parser::parse_left_right()
+{
+    Token current_token = current();
+
+    int start_line = current_token.line;
+    int start_col = current_token.column;
+
+    consume();
+
+    Token left_delim = consume();
+
+    ASTNode *inner = parse_assignment();
+
+    if (!match(TokenType::RIGHT_WRAP))
+    {
+        Token err_token = current();
+
+        throw ParseError(
+            "Missing \\right to match \\left @" +
+                std::to_string(start_line) + ":" + std::to_string(start_col),
+            err_token.line,
+            err_token.column);
+    }
+
+    consume();
+
+    Token right_delim = consume();
+
+    return make_node<LeftRightNode>(
+        std::string(left_delim.Value),
+        std::string(right_delim.Value),
+        inner,
+        start_line,
+        start_col);
+}
+
 /// @brief Parse a statement
 /// @return Statement AST node
 ASTNode *Parser::parse_statement()
@@ -260,7 +357,6 @@ ASTNode *Parser::parse_assignment()
 
 /// @brief Parse relational expressions
 /// @return AST node for relational expression
-/// @note Handles: =, <, >, <=, >=
 ASTNode *Parser::parse_relational()
 {
     auto left = parse_expression();
@@ -286,7 +382,6 @@ ASTNode *Parser::parse_relational()
 
 /// @brief Parse a complete expression
 /// @return AST node for expression
-/// @note Handles: addition, subtraction
 ASTNode *Parser::parse_expression()
 {
     auto left = parse_term();
@@ -307,7 +402,6 @@ ASTNode *Parser::parse_expression()
 
 /// @brief Parse a term
 /// @return AST node for term
-/// @note Handles: multiplication, division
 ASTNode *Parser::parse_term()
 {
     auto left = parse_power();
@@ -386,7 +480,6 @@ ASTNode *Parser::parse_postfix()
 
 /// @brief Parse a primary expression
 /// @return AST node for primary
-/// @note Handles: numbers, variables, symbols, commands, grouping
 ASTNode *Parser::parse_primary()
 {
     Token current_token = current();
@@ -399,6 +492,7 @@ ASTNode *Parser::parse_primary()
         double val = 0.0;
         auto [ptr, ec] = std::from_chars(current_token.Value.data(),
                                          current_token.Value.data() + current_token.Value.size(), val);
+
         if (ec != std::errc{})
         {
             throw ParseError("Invalid number @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column), current_token.line, current_token.column);
@@ -426,7 +520,7 @@ ASTNode *Parser::parse_primary()
         auto expr = parse_expression();
         expect(TokenType::ESCAPED_BRACE_CLOSE);
 
-        return Parser::make_node<GroupNode>(expr, tok.line, tok.column);
+        return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
     }
 
     case TokenType::BRACE_OPEN:
@@ -455,6 +549,16 @@ ASTNode *Parser::parse_primary()
             current_token.column);
     }
 
+    case TokenType::BRACKET_OPEN:
+    {
+        consume();
+
+        auto expr = parse_assignment();
+        expect(TokenType::BRACKET_CLOSE);
+
+        return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
+    }
+
     case TokenType::DISPLAY_MATH_OPEN:
     {
         consume();
@@ -475,13 +579,25 @@ ASTNode *Parser::parse_primary()
         return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
     }
 
+    case TokenType::ENV_BEGIN:
+    {
+        return parse_environment();
+    }
+
+    case TokenType::LEFT_WRAP:
+    {
+        return parse_left_right();
+    }
+
     case TokenType::SPACING:
-    case TokenType::ALIGNMENT:
     case TokenType::SYMBOL:
+    case TokenType::ALIGNMENT:
+    case TokenType::ARROW:
+    case TokenType::ELLIPSIS:
     case TokenType::UNKNOWN:
     {
         Token tok = consume();
-        return Parser::make_node<SymbolNode>(tok.Value, tok.line, tok.column);
+        return Parser::make_node<SymbolNode>(tok.Value, current_token.line, current_token.column);
     }
 
     default:

@@ -17,7 +17,9 @@ enum class ASTNodeType
     COMMAND,
     SCRIPT,
     FUNCTION_CALL,
-    SEQUENCE
+    SEQUENCE,
+    ENVIRONMENT,
+    LEFT_RIGHT
 };
 
 #endif

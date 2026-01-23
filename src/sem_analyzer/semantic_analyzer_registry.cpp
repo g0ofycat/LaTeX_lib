@@ -167,11 +167,37 @@ void SemanticAnalyzer::visit(SequenceNode &node)
 {
     for (auto &element : node.elements)
     {
-        if (element)
+        if (!element)
+            continue;
+
+        element->accept(*this);
+    }
+}
+
+/// @brief Visit a environment node
+/// @param node: The current node
+void SemanticAnalyzer::visit(EnvironmentNode &node)
+{
+    for (auto &vector : node.content)
+    {
+        for (auto &element : vector)
         {
+            if (!element)
+                continue;
+
             element->accept(*this);
         }
     }
+}
+
+/// @brief Visit a left-right node
+/// @param node: The current node
+void SemanticAnalyzer::visit(LeftRightNode &node)
+{
+    if (!node.content)
+        return;
+
+    node.content->accept(*this);
 }
 
 /// @brief Check division by 0

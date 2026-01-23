@@ -18,6 +18,8 @@ class CommandNode;
 class ScriptNode;
 class FunctionCallNode;
 class SequenceNode;
+class EnvironmentNode;
+class LeftRightNode;
 
 // ======================
 // -- ASTVisitor
@@ -79,6 +81,14 @@ public:
     /// @brief Visit a sequence node
     /// @param node: The current node
     virtual void visit(SequenceNode &node) = 0;
+
+    /// @brief Visit a environment node
+    /// @param node: The current node
+    virtual void visit(EnvironmentNode &node) = 0;
+
+    /// @brief Visit a left-right node
+    /// @param node: The current node
+    virtual void visit(LeftRightNode &node) = 0;
 };
 
 #endif

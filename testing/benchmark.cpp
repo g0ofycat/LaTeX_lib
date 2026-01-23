@@ -5,7 +5,7 @@
 
 static void BM_LexerTokenization(benchmark::State &state)
 {
-    std::string equation = R"(\[\nx = \frac{-b \pm \sqrt{b^2 -4ac}}{2a}\])";
+    std::string equation = R"(\det \left[\begin{array}{cc} a & b \\ c & d \end{array} \right] = ad - bc)";
 
     for (auto _ : state)
     {

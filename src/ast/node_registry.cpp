@@ -48,3 +48,11 @@ void FunctionCallNode::accept(ASTVisitor &v) { v.visit(*this); }
 /// @brief Visit a sequence node
 /// @param node: The current node
 void SequenceNode::accept(ASTVisitor &v) { v.visit(*this); }
+
+/// @brief Visit a environment node
+/// @param node: The current node
+void EnvironmentNode::accept(ASTVisitor &v) { v.visit(*this); }
+
+/// @brief Visit a left-right node
+/// @param node: The current node
+void LeftRightNode::accept(ASTVisitor &v) { v.visit(*this); }
