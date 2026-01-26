@@ -199,7 +199,7 @@ namespace LatexParser
         {"\\star", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\bullet", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\dots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
-        {"\\cdots", {CommandType::SYMBOL, TokenType::ELLIPSIS, 0, 0, true, true}},
+        {"\\cdots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\ldots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\vdots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
         {"\\ddots", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
@@ -244,7 +244,7 @@ namespace LatexParser
         // -- MISC
         // ======================
 
-        {"\\to", {CommandType::SYMBOL, TokenType::ARROW, 0, 0, true, true}},
+        {"\\to", {CommandType::SYMBOL, TokenType::COMMAND, 0, 0, true, true}},
 
         {"\\[", {CommandType::SYMBOL, TokenType::DISPLAY_MATH_OPEN, 0, 0, true, true}},
         {"\\]", {CommandType::SYMBOL, TokenType::DISPLAY_MATH_CLOSE, 0, 0, true, true}},

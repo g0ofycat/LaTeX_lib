@@ -73,6 +73,7 @@ const std::array<Lexer::LexerAction, 256> Lexer::LEXER_DISPATCH_TABLE = []
     map_char('$', TokenType::DOLLAR);
 
     map_char('\'', TokenType::PUNCTUATION);
+    map_char('.', TokenType::PUNCTUATION);
     map_char(':', TokenType::PUNCTUATION);
     map_char(';', TokenType::PUNCTUATION);
     map_char('?', TokenType::PUNCTUATION);

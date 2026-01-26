@@ -5,7 +5,7 @@
 
 static void BM_LexerTokenization(benchmark::State &state)
 {
-    std::string equation = R"(\det \left[\begin{array}{cc} a & b \\ c & d \end{array} \right] = ad - bc)";
+    std::string equation = R"(f _ { 9 } ^ { A } = V _ { 1 1 } \sum _ { ( n ^ { 1 } , n ^ { 2 } ) \ne ( 0 , 0 ) } \left( n ^ { I } g _ { I J } n ^ { J } \right) ^ { - 3 / 2 } \ , \quad V _ { 1 1 } = \sqrt { \det g _ { I J } })";
 
     for (auto _ : state)
     {

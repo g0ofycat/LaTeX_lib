@@ -589,12 +589,10 @@ ASTNode *Parser::parse_primary()
         return parse_left_right();
     }
 
+    case TokenType::PUNCTUATION:
     case TokenType::SPACING:
     case TokenType::SYMBOL:
     case TokenType::ALIGNMENT:
-    case TokenType::ARROW:
-    case TokenType::ELLIPSIS:
-    case TokenType::UNKNOWN:
     {
         Token tok = consume();
         return Parser::make_node<SymbolNode>(tok.Value, current_token.line, current_token.column);

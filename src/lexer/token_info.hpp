@@ -35,8 +35,6 @@ enum class TokenType
     PLUS_MINUS,
     MINUS_PLUS,
     STAR,
-    ARROW,
-    ELLIPSIS,
     SLASH,
     IDENTIFIER,
     CARET,
