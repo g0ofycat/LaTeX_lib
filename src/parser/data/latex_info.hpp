@@ -1,9 +1,6 @@
 #ifndef LATEX_INFO_HPP
 #define LATEX_INFO_HPP
 
-#include <string>
-#include <vector>
-
 #include "../lexer/token_info.hpp"
 
 // ======================

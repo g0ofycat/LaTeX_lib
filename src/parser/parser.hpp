@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <stdexcept>
 
 #include "../lexer/token_info.hpp"
@@ -51,6 +52,12 @@ private:
 
     static const std::unordered_map<TokenType, PostfixHandler> POSTFIX_DISPATCH;
 
+    // ======================
+    // -- FRIENDS
+    // ======================
+
+    friend class PrimaryParser;
+
 private:
     // ======================
     // -- HELPER METHODS
@@ -82,14 +89,6 @@ private:
     /// @param msg: Optional message
     /// @return The matched token
     Token expect(TokenType type, const std::string &msg = "");
-
-    /// @brief Create a node
-    /// @tparam T Template
-    /// @tparam ...Args Template
-    /// @param ...args The node to make
-    /// @return T*
-    template <typename T, typename... Args>
-    T *make_node(Args &&...args);
 
     // ======================
     // -- PARSING METHODS

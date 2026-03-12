@@ -12,6 +12,7 @@ add_executable(main
     src/lexer/lexer_registry.cpp
     src/parser/data/latex_registry.cpp
     src/parser/data/latex_commands_data.cpp
+    src/parser/utility/parser_primary_registry.cpp
     src/parser/parser_registry.cpp
     src/ast/node_registry.cpp
     src/sem_analyzer/semantic_analyzer_registry.cpp
@@ -43,6 +44,7 @@ add_executable(bench
     src/lexer/lexer_registry.cpp
     src/parser/data/latex_registry.cpp
     src/parser/data/latex_commands_data.cpp
+    src/parser/utility/parser_primary_registry.cpp
     src/parser/parser_registry.cpp
     src/ast/node_registry.cpp
     src/sem_analyzer/semantic_analyzer_registry.cpp

@@ -1,5 +1,3 @@
-#include <charconv>
-#include <sstream>
 #include <string>
 #include <array>
 
@@ -7,6 +5,7 @@
 #include "../lexer/token_info.hpp"
 #include "../ast/ast_node.hpp"
 #include "../ast/ast_arena.hpp"
+#include "./utility/parser_primary.hpp"
 
 // ======================
 // -- INIT
@@ -142,17 +141,6 @@ Token Parser::expect(TokenType type, const std::string &msg)
     return consume();
 }
 
-/// @brief Create a node
-/// @tparam T Template
-/// @tparam ...Args Template
-/// @param ...args The node to make
-/// @return T*
-template <typename T, typename... Args>
-T *Parser::make_node(Args &&...args)
-{
-    return _arena.alloc<T>(std::forward<Args>(args)...);
-}
-
 /// @brief Get string representation of a token
 /// @param token: The token to represent
 /// @return std::string
@@ -210,7 +198,7 @@ ASTNode *Parser::parse_root()
         return nullptr;
 
     return lines.size() > 1
-               ? Parser::make_node<SequenceNode>(lines, lines[0]->line, lines[0]->column)
+               ? make_node<SequenceNode>(_arena, lines, lines[0]->line, lines[0]->column)
                : lines[0];
 }
 
@@ -270,7 +258,7 @@ ASTNode *Parser::parse_environment()
         }
     }
 
-    return make_node<EnvironmentNode>(name, body, current_token.line, current_token.column);
+    return make_node<EnvironmentNode>(_arena, name, body, current_token.line, current_token.column);
 }
 
 /// @brief Parse a left-right construct
@@ -304,6 +292,7 @@ ASTNode *Parser::parse_left_right()
     Token right_delim = consume();
 
     return make_node<LeftRightNode>(
+        _arena,
         std::string(left_delim.Value),
         std::string(right_delim.Value),
         inner,
@@ -330,7 +319,7 @@ ASTNode *Parser::parse_assignment()
 
     if (match(TokenType::EQUAL) || match(TokenType::ALIGNMENT))
     {
-        left = Parser::make_node<SymbolNode>("", current().line, current().column);
+        left = make_node<SymbolNode>(_arena, "", current().line, current().column);
     }
     else
     {
@@ -343,13 +332,9 @@ ASTNode *Parser::parse_assignment()
         auto right = parse_assignment();
 
         if (op.Type == TokenType::EQUAL)
-        {
-            return Parser::make_node<AssignNode>(left, right, op.line, op.column);
-        }
+            return make_node<AssignNode>(_arena, left, right, op.line, op.column);
         else
-        {
-            return Parser::make_node<BinaryOpNode>('&', left, right, op.line, op.column);
-        }
+            return make_node<BinaryOpNode>(_arena, '&', left, right, op.line, op.column);
     }
 
     return left;
@@ -371,8 +356,7 @@ ASTNode *Parser::parse_relational()
 
         char oper = REL_OP_LOOKUP.data[static_cast<size_t>(op.Type)];
 
-        left = Parser::make_node<BinaryOpNode>(oper, left, right,
-                                               op.line, op.column);
+        left = make_node<BinaryOpNode>(_arena, oper, left, right, op.line, op.column);
 
         current_token_type = current().Type;
     }
@@ -393,8 +377,7 @@ ASTNode *Parser::parse_expression()
 
         char oper = EXPR_OP_LOOKUP.data[static_cast<size_t>(op.Type)];
 
-        left = Parser::make_node<BinaryOpNode>(
-            oper, left, right, op.line, op.column);
+        left = make_node<BinaryOpNode>(_arena, oper, left, right, op.line, op.column);
     }
 
     return left;
@@ -410,11 +393,9 @@ ASTNode *Parser::parse_term()
     {
         Token op = consume();
         auto right = parse_power();
-
         char oper = (op.Type == TokenType::STAR) ? '*' : '/';
 
-        left = Parser::make_node<BinaryOpNode>(
-            oper, left, right, op.line, op.column);
+        left = make_node<BinaryOpNode>(_arena, oper, left, right, op.line, op.column);
     }
 
     return left;
@@ -431,8 +412,7 @@ ASTNode *Parser::parse_power()
         Token op = consume();
         auto exponent = parse_power();
 
-        return Parser::make_node<BinaryOpNode>(
-            '^', base, exponent, op.line, op.column);
+        return make_node<BinaryOpNode>(_arena, '^', base, exponent, op.line, op.column);
     }
 
     return base;
@@ -446,11 +426,9 @@ ASTNode *Parser::parse_prefix()
     {
         Token op = consume();
         auto expr = parse_prefix();
-
         char oper = (op.Type == TokenType::MINUS) ? '-' : '+';
 
-        return Parser::make_node<UnaryOpNode>(
-            oper, expr, op.line, op.column);
+        return make_node<UnaryOpNode>(_arena, oper, expr, op.line, op.column);
     }
 
     return parse_postfix();
@@ -467,9 +445,7 @@ ASTNode *Parser::parse_postfix()
         auto it = POSTFIX_DISPATCH.find(current().Type);
 
         if (it == POSTFIX_DISPATCH.end())
-        {
             break;
-        }
 
         PostfixHandler handler = it->second;
         expr = (this->*handler)(expr);
@@ -482,128 +458,7 @@ ASTNode *Parser::parse_postfix()
 /// @return AST node for primary
 ASTNode *Parser::parse_primary()
 {
-    Token current_token = current();
-
-    switch (current_token.Type)
-    {
-    case TokenType::NUMBER:
-    {
-        consume();
-        double val = 0.0;
-        auto [ptr, ec] = std::from_chars(current_token.Value.data(),
-                                         current_token.Value.data() + current_token.Value.size(), val);
-
-        if (ec != std::errc{})
-        {
-            throw ParseError("Invalid number @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column), current_token.line, current_token.column);
-        }
-
-        return Parser::make_node<NumberNode>(val, current_token.line, current_token.column);
-    }
-
-    case TokenType::IDENTIFIER:
-    {
-        consume();
-
-        return Parser::make_node<VariableNode>(current_token.Value, current_token.line, current_token.column);
-    }
-
-    case TokenType::COMMAND:
-    {
-        return parse_command();
-    }
-
-    case TokenType::ESCAPED_BRACE_OPEN:
-    {
-        Token tok = consume();
-
-        auto expr = parse_expression();
-        expect(TokenType::ESCAPED_BRACE_CLOSE);
-
-        return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
-    }
-
-    case TokenType::BRACE_OPEN:
-    {
-        consume();
-
-        auto expr = parse_assignment();
-        expect(TokenType::BRACE_CLOSE);
-
-        return Parser::make_node<GroupNode>(
-            expr,
-            current_token.line,
-            current_token.column);
-    }
-
-    case TokenType::PAREN_OPEN:
-    {
-        consume();
-
-        auto expr = parse_assignment();
-        expect(TokenType::PAREN_CLOSE);
-
-        return Parser::make_node<GroupNode>(
-            expr,
-            current_token.line,
-            current_token.column);
-    }
-
-    case TokenType::BRACKET_OPEN:
-    {
-        consume();
-
-        auto expr = parse_assignment();
-        expect(TokenType::BRACKET_CLOSE);
-
-        return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
-    }
-
-    case TokenType::DISPLAY_MATH_OPEN:
-    {
-        consume();
-
-        auto expr = parse_assignment();
-        expect(TokenType::DISPLAY_MATH_CLOSE);
-
-        return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
-    }
-
-    case TokenType::INLINE_MATH_OPEN:
-    {
-        consume();
-
-        auto expr = parse_assignment();
-        expect(TokenType::INLINE_MATH_CLOSE);
-
-        return Parser::make_node<GroupNode>(expr, current_token.line, current_token.column);
-    }
-
-    case TokenType::ENV_BEGIN:
-    {
-        return parse_environment();
-    }
-
-    case TokenType::LEFT_WRAP:
-    {
-        return parse_left_right();
-    }
-
-    case TokenType::PUNCTUATION:
-    case TokenType::SPACING:
-    case TokenType::SYMBOL:
-    case TokenType::ALIGNMENT:
-    {
-        Token tok = consume();
-        return Parser::make_node<SymbolNode>(tok.Value, current_token.line, current_token.column);
-    }
-
-    default:
-    {
-        std::string msg = "Unexpected token in primary: " + token_repr(current_token) + " @" + std::to_string(current_token.line) + ':' + std::to_string(current_token.column);
-        throw ParseError(msg, current_token.line, current_token.column);
-    }
-    }
+    return PrimaryParser(*this, current()).parse();
 }
 
 // ======================
@@ -618,12 +473,9 @@ ASTNode *Parser::parse_command()
     const CommandInfo *info = cmd_token.Info;
 
     if (!info)
-    {
-        return Parser::make_node<SymbolNode>(cmd_token.Value, cmd_token.line, cmd_token.column);
-    }
+        return make_node<SymbolNode>(_arena, cmd_token.Value, cmd_token.line, cmd_token.column);
 
     std::vector<ASTNode *> args;
-
     args.reserve(info->mandatory_args + info->optional_args);
 
     for (int i = 0; i < info->optional_args; ++i)
@@ -663,8 +515,7 @@ ASTNode *Parser::parse_command()
         }
     }
 
-    return Parser::make_node<CommandNode>(
-        cmd_token.Value, args, info, cmd_token.line, cmd_token.column);
+    return make_node<CommandNode>(_arena, cmd_token.Value, args, info, cmd_token.line, cmd_token.column);
 }
 
 /// @brief Parse subscripts and superscripts
@@ -681,9 +532,7 @@ ASTNode *Parser::parse_subsup(ASTNode *base)
         consume();
 
         if ((is_super && sup) || (!is_super && sub))
-        {
             throw ParseError("Multiple scripts of the same type detected", current().line, current().column);
-        }
 
         ASTNode *script;
 
@@ -701,12 +550,11 @@ ASTNode *Parser::parse_subsup(ASTNode *base)
 
         if (is_super)
             sup = script;
-
         else
             sub = script;
     }
 
-    return Parser::make_node<ScriptNode>(base, sub, sup, base->line, base->column);
+    return make_node<ScriptNode>(_arena, base, sub, sup, base->line, base->column);
 }
 
 /// @brief Parse a factorial operator
@@ -715,8 +563,7 @@ ASTNode *Parser::parse_subsup(ASTNode *base)
 ASTNode *Parser::parse_factorial(ASTNode *left)
 {
     Token op = consume();
-
-    return Parser::make_node<UnaryOpNode>('!', left, op.line, op.column);
+    return make_node<UnaryOpNode>(_arena, '!', left, op.line, op.column);
 }
 
 // ======================
@@ -737,12 +584,9 @@ ASTNode *Parser::try_implicit_mul(ASTNode *left)
         auto right = parse_prefix();
 
         if (_position == last_pos)
-        {
             break;
-        }
 
-        left = Parser::make_node<BinaryOpNode>('*', left, right,
-                                               left->line, left->column);
+        left = make_node<BinaryOpNode>(_arena, '*', left, right, left->line, left->column);
     }
 
     return left;
@@ -754,9 +598,7 @@ ASTNode *Parser::try_implicit_mul(ASTNode *left)
 ASTNode *Parser::try_function_call(ASTNode *func)
 {
     if (!match(TokenType::PAREN_OPEN))
-    {
         return func;
-    }
 
     Token open_paren = consume();
 
@@ -776,11 +618,7 @@ ASTNode *Parser::try_function_call(ASTNode *func)
 
     expect(TokenType::PAREN_CLOSE, "Expected ')' after function arguments");
 
-    return Parser::make_node<FunctionCallNode>(
-        func,
-        args,
-        open_paren.line,
-        open_paren.column);
+    return make_node<FunctionCallNode>(_arena, func, args, open_paren.line, open_paren.column);
 }
 
 /// @brief Try to parse arguments in curly braces
@@ -806,6 +644,5 @@ ASTNode *Parser::try_braced_call(ASTNode *base)
     std::vector<ASTNode *> args;
     args.push_back(arg);
 
-    return Parser::make_node<FunctionCallNode>(
-        base, args, opening.line, opening.column);
+    return make_node<FunctionCallNode>(_arena, base, args, opening.line, opening.column);
 }

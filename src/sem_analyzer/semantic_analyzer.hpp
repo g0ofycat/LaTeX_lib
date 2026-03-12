@@ -1,7 +1,6 @@
 #ifndef SEMANTIC_ANALYZER_HPP
 #define SEMANTIC_ANALYZER_HPP
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>

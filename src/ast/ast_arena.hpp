@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <cstddef>
-#include <memory>
 #include <utility>
 
 // ======================
@@ -102,5 +101,21 @@ public:
     /// @return ASTArena
     ASTArena &operator=(const ASTArena &) = delete;
 };
+
+// ======================
+// -- PARSER
+// ======================
+
+/// @brief Allocate and construct an AST node in the given arena
+/// @tparam T Node type
+/// @tparam ...Args Constructor argument types
+/// @param arena: Arena to allocate from
+/// @param ...args: Constructor arguments
+/// @return Pointer to the allocated node
+template <typename T, typename... Args>
+T *make_node(ASTArena &arena, Args &&...args)
+{
+    return arena.alloc<T>(std::forward<Args>(args)...);
+}
 
 #endif

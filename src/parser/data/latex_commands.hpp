@@ -2,7 +2,6 @@
 #define LATEX_COMMANDS_HPP
 
 #include <string_view>
-#include <vector>
 #include <unordered_map>
 
 #include "./latex_info.hpp"

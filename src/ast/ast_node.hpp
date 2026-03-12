@@ -1,13 +1,12 @@
 #ifndef AST_NODE_HPP
 #define AST_NODE_HPP
 
-#include <memory>
 #include <vector>
 #include <string_view>
 #include <stdexcept>
 
-#include "./ast_info.hpp"
 #include "../parser/data/latex_commands.hpp"
+#include "./ast_info.hpp"
 
 // ======================
 // -- ASTVisitor

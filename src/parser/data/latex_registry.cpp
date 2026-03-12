@@ -1,6 +1,4 @@
-#include <vector>
 #include <string_view>
-#include <algorithm>
 
 #include "./latex_commands.hpp"
 

@@ -1,10 +1,7 @@
 #include <iostream>
-#include <string>
 #include <vector>
 
 #include "./latex_core.hpp"
-#include "../lexer/lexer.hpp"
-#include "../parser/parser.hpp"
 
 // ======================
 // -- INIT
