@@ -9,31 +9,31 @@
 
 enum class CommandType
 {
-    SYMBOL,
-    UNARY,
-    BINARY,
-    PREFIX_DELIMITER,
-    POSTFIX_DELIMITER,
-    MATH,
-    TEXT,
-    ACCENT,
-    UNKNOWN
+	SYMBOL,
+	UNARY,
+	BINARY,
+	PREFIX_DELIMITER,
+	POSTFIX_DELIMITER,
+	MATH,
+	TEXT,
+	ACCENT,
+	UNKNOWN
 };
 
 enum class ArgType
 {
-    REQUIRED,
-    OPTIONAL
+	REQUIRED,
+	OPTIONAL
 };
 
 struct CommandInfo
 {
-    CommandType type = CommandType::UNKNOWN;      // CommandType: Type of command
-    TokenType type_override = TokenType::COMMAND; // TokenType: Override the current command type
-    int mandatory_args = 0;                       // int: # of mandatory args
-    int optional_args = 0;                        // int: # of optional args
-    bool allows_subscript = true;                 // bool: Allow subscripts
-    bool allows_superscript = true;               // bool: Allow superscripts
+	CommandType type = CommandType::UNKNOWN;      // CommandType: Type of command
+	TokenType type_override = TokenType::COMMAND; // TokenType: Override the current command type
+	int mandatory_args = 0;                       // int: # of mandatory args
+	int optional_args = 0;                        // int: # of optional args
+	bool allows_subscript = true;                 // bool: Allow subscripts
+	bool allows_superscript = true;               // bool: Allow superscripts
 };
 
 #endif

@@ -17,16 +17,16 @@
 /// @brief Exception thrown during parsing errors
 class ParseError : public std::runtime_error
 {
-public:
-    int line;
-    int column;
+	public:
+		int line;
+		int column;
 
-    /// @brief Construct a parse error
-    /// @param msg: Error message
-    /// @param l: Line number where error occurred
-    /// @param c: Column number where error occurred
-    ParseError(const std::string &msg, int l, int c)
-        : std::runtime_error(msg), line(l), column(c) {}
+		/// @brief Construct a parse error
+		/// @param msg: Error message
+		/// @param l: Line number where error occurred
+		/// @param c: Column number where error occurred
+		ParseError(const std::string &msg, int l, int c)
+			: std::runtime_error(msg), line(l), column(c) {}
 };
 
 // ======================
@@ -35,175 +35,175 @@ public:
 
 class Parser
 {
-private:
-    // ======================
-    // -- PARSER DATA
-    // ======================
+	private:
+		// ======================
+		// -- PARSER DATA
+		// ======================
 
-    ASTArena _arena;
-    std::vector<Token> _tokens;
-    size_t _position = 0;
+		ASTArena _arena;
+		std::vector<Token> _tokens;
+		size_t _position = 0;
 
-    // ======================
-    // -- DISPATCH DATA
-    // ======================
+		// ======================
+		// -- DISPATCH DATA
+		// ======================
 
-    using PostfixHandler = ASTNode *(Parser::*)(ASTNode *);
+		using PostfixHandler = ASTNode *(Parser::*)(ASTNode *);
 
-    static const std::unordered_map<TokenType, PostfixHandler> POSTFIX_DISPATCH;
+		static const std::unordered_map<TokenType, PostfixHandler> POSTFIX_DISPATCH;
 
-    // ======================
-    // -- FRIENDS
-    // ======================
+		// ======================
+		// -- FRIENDS
+		// ======================
 
-    friend class PrimaryParser;
+		friend class PrimaryParser;
 
-private:
-    // ======================
-    // -- HELPER METHODS
-    // ======================
+	private:
+		// ======================
+		// -- HELPER METHODS
+		// ======================
 
-    /// @brief Check if at end of token stream
-    /// @return True if at end
-    [[nodiscard]] bool is_at_end() const;
+		/// @brief Check if at end of token stream
+		/// @return True if at end
+		[[nodiscard]] bool is_at_end() const;
 
-    /// @brief Get the current token
-    /// @return Current token before advancing
-    [[nodiscard]] Token current() const;
+		/// @brief Get the current token
+		/// @return Current token before advancing
+		[[nodiscard]] Token current() const;
 
-    /// @brief Peek at next
-    /// @return Current token
-    [[nodiscard]] Token peek_next() const;
+		/// @brief Peek at next
+		/// @return Current token
+		[[nodiscard]] Token peek_next() const;
 
-    /// @brief Consume the current token
-    /// @return Token
-    Token consume();
+		/// @brief Consume the current token
+		/// @return Token
+		Token consume();
 
-    /// @brief Check if current token matches given type
-    /// @param type: Token type to match
-    /// @return True if current token matches type
-    bool match(TokenType type);
+		/// @brief Check if current token matches given type
+		/// @param type: Token type to match
+		/// @return True if current token matches type
+		bool match(TokenType type);
 
-    /// @brief Expect a specific token type or throw error
-    /// @param type: Expected token type
-    /// @param msg: Optional message
-    /// @return The matched token
-    Token expect(TokenType type, const std::string &msg = "");
+		/// @brief Expect a specific token type or throw error
+		/// @param type: Expected token type
+		/// @param msg: Optional message
+		/// @return The matched token
+		Token expect(TokenType type, const std::string &msg = "");
 
-    // ======================
-    // -- PARSING METHODS
-    // ======================
+		// ======================
+		// -- PARSING METHODS
+		// ======================
 
-    /// @brief Parse root of the AST
-    /// @return Root node of the AST
-    ASTNode *parse_root();
+		/// @brief Parse root of the AST
+		/// @return Root node of the AST
+		ASTNode *parse_root();
 
-    /// @brief Parse a environment
-    /// @return Environment AST node
-    ASTNode *parse_environment();
+		/// @brief Parse a environment
+		/// @return Environment AST node
+		ASTNode *parse_environment();
 
-    /// @brief Parse a left-right construct
-    /// @return LeftRight AST node
-    ASTNode *parse_left_right();
+		/// @brief Parse a left-right construct
+		/// @return LeftRight AST node
+		ASTNode *parse_left_right();
 
-    /// @brief Parse a statement
-    /// @return Statement AST node
-    ASTNode *parse_statement();
+		/// @brief Parse a statement
+		/// @return Statement AST node
+		ASTNode *parse_statement();
 
-    /// @brief Parse a assignment statement
-    /// @return AST node for assignment
-    ASTNode *parse_assignment();
+		/// @brief Parse a assignment statement
+		/// @return AST node for assignment
+		ASTNode *parse_assignment();
 
-    /// @brief Parse relational expressions
-    /// @return AST node for relational expression
-    ASTNode *parse_relational();
+		/// @brief Parse relational expressions
+		/// @return AST node for relational expression
+		ASTNode *parse_relational();
 
-    /// @brief Parse a complete expression
-    /// @return AST node for expression
-    ASTNode *parse_expression();
+		/// @brief Parse a complete expression
+		/// @return AST node for expression
+		ASTNode *parse_expression();
 
-    /// @brief Parse a term
-    /// @return AST node for term
-    ASTNode *parse_term();
+		/// @brief Parse a term
+		/// @return AST node for term
+		ASTNode *parse_term();
 
-    /// @brief Parse a power / exponentiation
-    /// @return AST node for power
-    ASTNode *parse_power();
+		/// @brief Parse a power / exponentiation
+		/// @return AST node for power
+		ASTNode *parse_power();
 
-    /// @brief Parse a factor
-    /// @return AST node for factor
-    ASTNode *parse_prefix();
+		/// @brief Parse a factor
+		/// @return AST node for factor
+		ASTNode *parse_prefix();
 
-    /// @brief Parse a postfix expression
-    /// @return AST node for postfix
-    ASTNode *parse_postfix();
+		/// @brief Parse a postfix expression
+		/// @return AST node for postfix
+		ASTNode *parse_postfix();
 
-    /// @brief Parse a primary expression
-    /// @return AST node for primary
-    ASTNode *parse_primary();
+		/// @brief Parse a primary expression
+		/// @return AST node for primary
+		ASTNode *parse_primary();
 
-    // ======================
-    // -- LATEX COMMAND PARSING METHODS
-    // ======================
+		// ======================
+		// -- LATEX COMMAND PARSING METHODS
+		// ======================
 
-    /// @brief Parse a LaTeX command
-    /// @return AST node for command
-    ASTNode *parse_command();
+		/// @brief Parse a LaTeX command
+		/// @return AST node for command
+		ASTNode *parse_command();
 
-    /// @brief Parse subscripts and superscripts
-    /// @param base: Base AST node
-    /// @return AST node for subscript / superscript
-    ASTNode *parse_subsup(ASTNode *base);
+		/// @brief Parse subscripts and superscripts
+		/// @param base: Base AST node
+		/// @return AST node for subscript / superscript
+		ASTNode *parse_subsup(ASTNode *base);
 
-    /// @brief Parse a factorial operator
-    /// @param left: The operand to the left of the '!'
-    /// @return A UnaryOpNode representing the factorial
-    ASTNode *parse_factorial(ASTNode *left);
+		/// @brief Parse a factorial operator
+		/// @param left: The operand to the left of the '!'
+		/// @return A UnaryOpNode representing the factorial
+		ASTNode *parse_factorial(ASTNode *left);
 
-    /// @brief Try to parse implicit multiplication
-    /// @param left: Left AST node
-    /// @return AST node for implicit multiplication or left node if no implicit multiplication
-    ASTNode *try_implicit_mul(ASTNode *left);
+		/// @brief Try to parse implicit multiplication
+		/// @param left: Left AST node
+		/// @return AST node for implicit multiplication or left node if no implicit multiplication
+		ASTNode *try_implicit_mul(ASTNode *left);
 
-    /// @brief Try a function call
-    /// @param func The function
-    /// @return AST node for function call or no function call
-    ASTNode *try_function_call(ASTNode *func);
+		/// @brief Try a function call
+		/// @param func The function
+		/// @return AST node for function call or no function call
+		ASTNode *try_function_call(ASTNode *func);
 
-    /// @brief Try to parse arguments in curly braces
-    /// @param base The preceding node (the "function" or "operator")
-    /// @return AST node representing the applying of the braces to the base
-    ASTNode *try_braced_call(ASTNode *base);
+		/// @brief Try to parse arguments in curly braces
+		/// @param base The preceding node (the "function" or "operator")
+		/// @return AST node representing the applying of the braces to the base
+		ASTNode *try_braced_call(ASTNode *base);
 
-    // ======================
-    // -- UTILITY
-    // ======================
+		// ======================
+		// -- UTILITY
+		// ======================
 
-    /// @brief Get string representation of a token
-    /// @param token: The token to represent
-    /// @return std::string
-    std::string token_repr(const Token &token) const;
+		/// @brief Get string representation of a token
+		/// @param token: The token to represent
+		/// @return std::string
+		std::string token_repr(const Token &token) const;
 
-public:
-    // ======================
-    // -- CONSTRUCTORS
-    // ======================
+	public:
+		// ======================
+		// -- CONSTRUCTORS
+		// ======================
 
-    /// @brief Default Constructor
-    Parser() = default;
+		/// @brief Default Constructor
+		Parser() = default;
 
-    /// @brief Parser constructor
-    /// @param toks: Vector of tokens to parse
-    Parser(std::vector<Token> toks) : _tokens(std::move(toks)) {}
+		/// @brief Parser constructor
+		/// @param toks: Vector of tokens to parse
+		Parser(std::vector<Token> toks) : _tokens(std::move(toks)) {}
 
-    // ======================
-    // -- PUBLIC METHODS
-    // ======================
+		// ======================
+		// -- PUBLIC METHODS
+		// ======================
 
-    /// @brief Parse tokens into an AST
-    /// @return Root node of the AST
-    /// @throws ParseError if parsing fails
-    ASTNode *parse();
+		/// @brief Parse tokens into an AST
+		/// @return Root node of the AST
+		/// @throws ParseError if parsing fails
+		ASTNode *parse();
 };
 
 #endif

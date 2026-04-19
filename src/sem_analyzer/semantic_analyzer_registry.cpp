@@ -10,212 +10,212 @@
 /// @param root: AST Root
 void SemanticAnalyzer::analyze(ASTNode *&root)
 {
-    errors.clear();
-    defined_variables.clear();
-    variable_usage.clear();
+	errors.clear();
+	defined_variables.clear();
+	variable_usage.clear();
 
-    if (!root)
-    {
-        errors.push_back({"Empty AST", 0, 0});
-        return;
-    }
+	if (!root)
+	{
+		errors.push_back({"Empty AST", 0, 0});
+		return;
+	}
 
-    root->accept(*this);
+	root->accept(*this);
 }
 
 /// @brief Visit a number node
 /// @param node: The current node
 void SemanticAnalyzer::visit(NumberNode &node)
 {
-    if (std::isnan(node.value) || std::isinf(node.value))
-    {
-        errors.push_back({"Invalid number value",
-                          node.line,
-                          node.column});
-    }
+	if (std::isnan(node.value) || std::isinf(node.value))
+	{
+		errors.push_back({"Invalid number value",
+				node.line,
+				node.column});
+	}
 }
 
 /// @brief Visit a variable node
 /// @param node: The current node
 void SemanticAnalyzer::visit(VariableNode &node)
 {
-    variable_usage[node.name] = {true, {node.line, node.column}};
+	variable_usage[node.name] = {true, {node.line, node.column}};
 }
 
 /// @brief Visit a symbol node
 /// @param node: The current node
 void SemanticAnalyzer::visit(SymbolNode &node)
 {
-    // no impl, symbol always valid
+	// no impl, symbol always valid
 }
 
 /// @brief Visit a assignment node
 /// @param node: The current node
 void SemanticAnalyzer::visit(AssignNode &node)
 {
-    if (node.target)
-        node.target->accept(*this);
+	if (node.target)
+		node.target->accept(*this);
 
-    if (node.value)
-        node.value->accept(*this);
+	if (node.value)
+		node.value->accept(*this);
 
-    if (node.target && node.target->Type == ASTNodeType::VARIABLE)
-    {
-        const auto *var = static_cast<const VariableNode *>(node.target);
-        defined_variables.insert(var->name);
-    }
+	if (node.target && node.target->Type == ASTNodeType::VARIABLE)
+	{
+		const auto *var = static_cast<const VariableNode *>(node.target);
+		defined_variables.insert(var->name);
+	}
 
-    if (node.target && node.target->Type == ASTNodeType::NUMBER)
-    {
-        errors.push_back({"Cannot assign to a literal value",
-                          node.line,
-                          node.column});
-    }
+	if (node.target && node.target->Type == ASTNodeType::NUMBER)
+	{
+		errors.push_back({"Cannot assign to a literal value",
+				node.line,
+				node.column});
+	}
 }
 
 /// @brief Visit a group node
 /// @param node: The current node
 void SemanticAnalyzer::visit(GroupNode &node)
 {
-    for (const auto &element : node.elements)
-    {
-        if (!element)
-            continue;
+	for (const auto &element : node.elements)
+	{
+		if (!element)
+			continue;
 
-        element->accept(*this);
-    }
+		element->accept(*this);
+	}
 }
 
 /// @brief Visit a binary node
 /// @param node: The current node
 void SemanticAnalyzer::visit(BinaryOpNode &node)
 {
-    if (node.left)
-        node.left->accept(*this);
-    if (node.right)
-        node.right->accept(*this);
+	if (node.left)
+		node.left->accept(*this);
+	if (node.right)
+		node.right->accept(*this);
 
-    if (node.op == '/')
-    {
-        check_division_by_zero(node.right);
-    }
+	if (node.op == '/')
+	{
+		check_division_by_zero(node.right);
+	}
 }
 
 /// @brief Visit a unary node
 /// @param node: The current node
 void SemanticAnalyzer::visit(UnaryOpNode &node)
 {
-    if (node.operand)
-    {
-        node.operand->accept(*this);
-    }
+	if (node.operand)
+	{
+		node.operand->accept(*this);
+	}
 }
 
 /// @brief Visit a command node
 /// @param node: The current node
 void SemanticAnalyzer::visit(CommandNode &node)
 {
-    for (auto &arg : node.arguments)
-    {
-        if (arg)
-            arg->accept(*this);
-    }
+	for (auto &arg : node.arguments)
+	{
+		if (arg)
+			arg->accept(*this);
+	}
 
-    auto it = VALIDATOR_DISPATCH_TABLE.find(node.name);
+	auto it = VALIDATOR_DISPATCH_TABLE.find(node.name);
 
-    if (it != VALIDATOR_DISPATCH_TABLE.end())
-    {
-        it->second(this, node);
-    }
+	if (it != VALIDATOR_DISPATCH_TABLE.end())
+	{
+		it->second(this, node);
+	}
 }
 
 /// @brief Visit a script node
 /// @param node: The current node
 void SemanticAnalyzer::visit(ScriptNode &node)
 {
-    node.base->accept(*this);
+	node.base->accept(*this);
 
-    if (node.subscript)
-    {
-        node.subscript->accept(*this);
-    }
+	if (node.subscript)
+	{
+		node.subscript->accept(*this);
+	}
 
-    if (node.superscript)
-    {
-        node.superscript->accept(*this);
-    }
+	if (node.superscript)
+	{
+		node.superscript->accept(*this);
+	}
 }
 
 /// @brief Visit a function call node
 /// @param node: The current node
 void SemanticAnalyzer::visit(FunctionCallNode &node)
 {
-    node.function->accept(*this);
+	node.function->accept(*this);
 
-    for (auto &arg : node.args)
-    {
-        if (!arg)
-            continue;
+	for (auto &arg : node.args)
+	{
+		if (!arg)
+			continue;
 
-        arg->accept(*this);
-    }
+		arg->accept(*this);
+	}
 }
 
 /// @brief Visit a sequence node
 /// @param node: The current node
 void SemanticAnalyzer::visit(SequenceNode &node)
 {
-    for (auto &element : node.elements)
-    {
-        if (!element)
-            continue;
+	for (auto &element : node.elements)
+	{
+		if (!element)
+			continue;
 
-        element->accept(*this);
-    }
+		element->accept(*this);
+	}
 }
 
 /// @brief Visit a environment node
 /// @param node: The current node
 void SemanticAnalyzer::visit(EnvironmentNode &node)
 {
-    for (auto &vector : node.content)
-    {
-        for (auto &element : vector)
-        {
-            if (!element)
-                continue;
+	for (auto &vector : node.content)
+	{
+		for (auto &element : vector)
+		{
+			if (!element)
+				continue;
 
-            element->accept(*this);
-        }
-    }
+			element->accept(*this);
+		}
+	}
 }
 
 /// @brief Visit a left-right node
 /// @param node: The current node
 void SemanticAnalyzer::visit(LeftRightNode &node)
 {
-    if (!node.content)
-        return;
+	if (!node.content)
+		return;
 
-    node.content->accept(*this);
+	node.content->accept(*this);
 }
 
 /// @brief Check division by 0
 /// @param denominator: Denominator
 void SemanticAnalyzer::check_division_by_zero(const ASTNode *denominator)
 {
-    if (!denominator)
-        return;
+	if (!denominator)
+		return;
 
-    if (denominator->Type == ASTNodeType::NUMBER)
-    {
-        const auto *num = static_cast<const NumberNode *>(denominator);
+	if (denominator->Type == ASTNodeType::NUMBER)
+	{
+		const auto *num = static_cast<const NumberNode *>(denominator);
 
-        if (num->value == 0.0)
-        {
-            errors.push_back({"Division by zero",
-                              denominator->line,
-                              denominator->column});
-        }
-    }
+		if (num->value == 0.0)
+		{
+			errors.push_back({"Division by zero",
+					denominator->line,
+					denominator->column});
+		}
+	}
 }

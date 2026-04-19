@@ -11,36 +11,36 @@
 /// @note [DEBUG]
 void LatexCore::print_tokens()
 {
-    std::cout << "Tokens (" << tokens.size() << "):\n";
+	std::cout << "Tokens (" << tokens.size() << "):\n";
 
-    for (const auto &token : tokens)
-    {
-        std::cout << "  "
-                  << static_cast<int>(token.Type)
-                  << " : " << token.Value
-                  << " @ " << token.line << ":" << token.column
-                  << "\n";
-    }
+	for (const auto &token : tokens)
+	{
+		std::cout << "  "
+			<< static_cast<int>(token.Type)
+			<< " : " << token.Value
+			<< " @ " << token.line << ":" << token.column
+			<< "\n";
+	}
 };
 
 /// @brief Print the errors found during semantic analysis
 /// @note [DEBUG]
 void LatexCore::print_analysis()
 {
-    std::cout << "Errors (" << errors.size() << "):\n";
+	std::cout << "Errors (" << errors.size() << "):\n";
 
-    for (const auto &error : errors)
-    {
-        std::cout << "  "
-                  << error.message
-                  << " @ " << error.line << ":" << error.column
-                  << "\n";
-    }
+	for (const auto &error : errors)
+	{
+		std::cout << "  "
+			<< error.message
+			<< " @ " << error.line << ":" << error.column
+			<< "\n";
+	}
 };
 
 /// @brief Return analysis results
 /// @return std::vector<SemanticError>
 std::vector<SemanticError> LatexCore::return_errors()
 {
-    return analyzer.get_errors();
+	return analyzer.get_errors();
 }

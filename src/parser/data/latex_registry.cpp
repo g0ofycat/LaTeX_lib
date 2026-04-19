@@ -10,13 +10,12 @@
 
 namespace LatexParser
 {
-    /// @brief Find the CommandType for a specific CommandType
-    /// @param name: The name of the command
-    /// @return const CommandInfo
-    const CommandInfo *find_command(std::string_view name)
-    {
-        auto it = LATEX_COMMANDS.find(name);
-
-        return it != LATEX_COMMANDS.end() ? &it->second : nullptr;
-    }
+	/// @brief Find the CommandType for a specific CommandType
+	/// @param name: The name of the command
+	/// @return const CommandInfo
+	const CommandInfo *find_command(std::string_view name)
+	{
+		auto it = LATEX_COMMANDS.find(name);
+		return it != LATEX_COMMANDS.end() ? &it->second : nullptr;
+	}
 }
